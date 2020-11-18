@@ -1,0 +1,1 @@
+const tokenContract = artifacts.require("STBL")
