@@ -34,16 +34,16 @@ contract("STBL", (accounts) => {
 	)
 
 	it("should be able to deposit ETH", async () => {
-		const result = await tokenInstance.deposit(accounts[1], 1, { from: accounts[0] })
-		assert.equal(result.receipt.status, true)
+		const result = await tokenInstance.deposit(accounts[1], 1, { from: accounts[0], value: 1 })
+		assert.equal(result.status, true)
 		let balance = await tokenInstance.balanceOf(accounts[1])
-		assert.equal(balance.toString(), "1")
+		assert.equal(balance.toString(), "466")	// oracleInstance.getLatestPrice()
 	})
 
 	it("should be able to withdraw ETH", async () => {
 		const result = await tokenInstance.withdraw(accounts[1], 1)
-		assert.equal(result.receipt.status, true)
+		assert.equal(result.status, true)
 		let balance = await tokenInstance.balanceOf(accounts[1])
-		assert.equal(balance.toString(), "0")
+		assert.equal(balance.toString(), "465")	// this would depend on latest price too
 	})
 })
