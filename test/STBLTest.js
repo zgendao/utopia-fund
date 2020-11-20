@@ -3,6 +3,8 @@ const tokenContract = artifacts.require("STBL")
 
 const secrets = require("../secrets.json")
 
+let price = 0
+
 contract("EthPriceOracle", (accounts) => {
 	let oracleInstance
 
@@ -11,7 +13,6 @@ contract("EthPriceOracle", (accounts) => {
 	)
 
 	it("should be able to get latest price", async () => {
-			let price = 0
 			price = await oracleInstance.getLatestPrice()
 			assert(price !== 0, "Price can't be zero")
 		}
@@ -35,15 +36,15 @@ contract("STBL", (accounts) => {
 
 	it("should be able to deposit ETH", async () => {
 		const result = await tokenInstance.deposit(accounts[1], 1, { from: accounts[0], value: 1 })
-		assert.equal(result.status, true)
+		assert.equal(result.receipt.status, true)
 		let balance = await tokenInstance.balanceOf(accounts[1])
-		assert.equal(balance.toString(), "466")	// oracleInstance.getLatestPrice()
+		assert.equal(balance.toString(), price.toString()) 
 	})
 
 	it("should be able to withdraw ETH", async () => {
 		const result = await tokenInstance.withdraw(accounts[1], 1)
-		assert.equal(result.status, true)
+		assert.equal(result.receipt.status, true)
 		let balance = await tokenInstance.balanceOf(accounts[1])
-		assert.equal(balance.toString(), "465")	// this would depend on latest price too
+		assert.equal(balance.toString(), (price - 1).toString())
 	})
 })
