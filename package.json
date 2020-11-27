@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/zgendao/utopia-fund#readme",
   "dependencies": {
-    "@openzeppelin/contracts": "^3.2.2-solc-0.7"
+    "@openzeppelin/contracts": "^3.2.2-solc-0.7",
+    "@truffle/hdwallet-provider": "^1.2.0"
   }
 }
