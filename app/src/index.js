@@ -1,4 +1,5 @@
 import Web3 from "web3"
+import { getAPY } from "./APY.mjs"
 
 const App = {
 	web3: null,
@@ -8,14 +9,19 @@ const App = {
 		const { web3 } = this
 
 		try {
-			// get contract instance
+			// get network id
 			const networkId = await web3.eth.net.getId()
 
 			// get accounts
 			const accounts = await web3.eth.getAccounts()
 			this.account = accounts[0]
 
-			this.refreshBalance()
+		/*
+			const currentBlock = await web3.eth.getBlockNumber()
+			document.getElementById("message").innerHTML = currentBlock
+		*/
+			const TWT_APY = await getAPY(web3, '0x9c4EBADa591FFeC4124A7785CAbCfb7068fED2fb')
+			console.log(TWT_APY)
 		} catch (error) {
 			console.error("Could not connect to contract or chain.")
 		}
