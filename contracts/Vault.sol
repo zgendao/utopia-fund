@@ -9,26 +9,13 @@ contract Vault is Ownable {
     IBEP20 private cakeToken;
     BEP20Mintable private yCakeToken;
 
+    event Deposit(address account, uint256 amount);
+    event Withdraw(address account, uint256 amount);
+
     constructor() {
         cakeToken = IBEP20(0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82);
         yCakeToken = new BEP20Mintable("yCake Token", "yCake");
         yCakeToken.mint(address(this), 100000 * 10 ** yCakeToken.decimals());
-    }
-
-    /// @notice Approve the contract to access _amount Cake tokens of the sender
-    /// @dev Might be reasonable to set a higher amount of allowance for future gas savings
-    /// @return True if the approval was successful
-    function approveCakeTransaction(uint256 _amount) public returns (bool) {
-        require(cakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough Cakes");
-        return cakeToken.approve(address(this), _amount);
-    }
-
-    /// @notice Approve the contract to access _amount yCake tokens of the sender
-    /// @dev Might be reasonable to set a higher amount of allowance for future gas savings
-    /// @return True if the approval was successful
-    function approveYCakeTransaction(uint256 _amount) public returns (bool) {
-        require(yCakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough yCakes");
-        return yCakeToken.approve(address(this), _amount);
     }
 
     /// @notice Accepts cakes, mints yCakes
@@ -38,6 +25,7 @@ contract Vault is Ownable {
         require(cakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough funds");
         cakeToken.transferFrom(msg.sender, address(this), _amount);
         yCakeToken.mint(msg.sender, _amount);
+        emit Deposit(msg.sender, _amount);
     }
 
     /// @notice Burns yCakes, gives back Cakes
@@ -47,6 +35,7 @@ contract Vault is Ownable {
         require(yCakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough funds");
         yCakeToken.burn(msg.sender, _amount);
         cakeToken.transferFrom(address(this), msg.sender, _amount);
+        emit Withdraw(msg.sender, _amount);
     }
 
     /// @notice Withdraws all the cakes of the sender
@@ -63,6 +52,12 @@ contract Vault is Ownable {
     /// @return The amount of yCakes the depositor has
     function getBalance() public view returns (uint256) {
         return yCakeToken.balanceOf(msg.sender);
+    }
+
+    /// @notice Gets the yCake balance of _account
+    /// @return The amount of yCakes _account has
+    function getBalanceOf(address _account) public view returns (uint256) {
+        return yCakeToken.balanceOf(_account);
     }
 
 }
