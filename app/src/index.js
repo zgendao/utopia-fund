@@ -45,17 +45,15 @@ const App = {
 
 			// looping through each pool
 			pools.forEach(
-				pool => getAPY(web3, pool.address, pool.reward).then(
-					APY => {
-						pool.APY = APY
-
-						// finding the highest APY
-						if (pool.APY > bestAPY) {
-							bestAPY = pool.APY
-							bestAPYPool = pool.address
-						}
+				pool => {
+					pool.APY = getAPY(web3, pool.address, pool.reward)
+					
+					// finding the highest APY
+					if (pool.APY > bestAPY) {
+						bestAPY = pool.APY
+						bestAPYPool = pool.address
 					}
-				)
+				}
 			)
 
 			console.log(bestAPYPool)
