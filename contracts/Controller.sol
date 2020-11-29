@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 /// @author Józsa Erik
 
-pragma solidity >=0.6.0;
+pragma solidity >=0.7.0;
 
-import "./Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Controller is Ownable {
     address pool;
