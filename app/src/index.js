@@ -45,8 +45,8 @@ const App = {
 
 			// looping through each pool
 			pools.forEach(
-				pool => {
-					pool.APY = getAPY(web3, pool.address, pool.reward)
+				async pool => {
+					pool.APY = await getAPY(web3, pool.address, pool.reward)
 					
 					// finding the highest APY
 					if (pool.APY > bestAPY) {
@@ -59,7 +59,7 @@ const App = {
 			console.log(bestAPYPool)
 			console.log(bestAPY)
 		} catch (error) {
-			console.error("Could not connect to contract or chain.")
+			console.error(error)
 		}
 	},
 }
