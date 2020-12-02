@@ -45,8 +45,9 @@ const App = {
 
 			// looping through each pool
 			pools.forEach(
-				async pool => {
-					pool.APY = await getAPY(web3, pool.address, pool.reward)
+				pool => {
+					pool.APY = getAPY(web3, pool.address, pool.reward)
+					console.log(pool.APY)
 					
 					// finding the highest APY
 					if (pool.APY > bestAPY) {
