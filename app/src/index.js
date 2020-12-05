@@ -1,6 +1,7 @@
 import Web3 from "web3"
 import { addr } from "./crypto_helper.mjs"
-import { getAPY } from "./APY.mjs"
+import { getAPY, printAPY } from "./APY.mjs"
+import { get } from "http"
 
 const App = {
 	web3: null,
@@ -43,22 +44,34 @@ const App = {
 			const accounts = await web3.eth.getAccounts()
 			this.account = accounts[0]
 
-			// looping through each pool
-			pools.forEach(
-				pool => {
-					pool.APY = getAPY(web3, pool.address, pool.reward)
-					console.log(pool.APY)
-					
-					// finding the highest APY
-					if (pool.APY > bestAPY) {
-						bestAPY = pool.APY
-						bestAPYPool = pool.address
-					}
-				}
-			)
+			var APYgetter = new Promise((resolve, reject) => {
+				let counter = 0;
+				// looping through each pool
+				pools.forEach(
+					pool => {
+						function cb(APY) {
+							console.log(APY)
+							pool.APY = APY
+						
+							// finding the highest APY
+							if (pool.APY > bestAPY) {
+								bestAPY = pool.APY
+								bestAPYPool = pool.address
+							}
+							
+							if (counter++ === 3)
+								resolve()
+						}
 
-			console.log(bestAPYPool)
-			console.log(bestAPY)
+						getAPY(web3, pool.address, pool.reward, cb)
+					}
+				)
+			})
+
+			APYgetter.then(() => {
+				console.log(`The address of the pool with the highest APY is ${bestAPYPool}`)
+				console.log(`The highest APY is ${bestAPY}`)
+			})
 		} catch (error) {
 			console.error(error)
 		}

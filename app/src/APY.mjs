@@ -10,7 +10,7 @@ let cakeAmountInContract
 let cakePrice
 let blockDiff
 
-export function getAPY(web3, address, rewardToken) {
+export async function getAPY(web3, address, rewardToken, callback) {
 	web3.eth.getBlockNumber().then(num => {
 		currentBlock = num
 
@@ -78,8 +78,8 @@ export function getAPY(web3, address, rewardToken) {
 							console.log(`rewardTokenPrice (${coingecko_ids[rewardToken]}): ${rewardTokenPrice}`)
 						}
 					})
-	
-					const APY =
+
+					callback(
 						(rewardPerBlock * rewardTokenPrice)
 						/
 						(cakeAmountInContract * cakePrice)
@@ -87,10 +87,11 @@ export function getAPY(web3, address, rewardToken) {
 						(address === addr["blk_pool"] ? 1000000000000 / 3: 1)
 						*
 						(365 * 60 * 60 * 8)
-	
-					console.log(APY)
-					return APY
-				});
+					)
+				})
+			}, 
+			error: function() {
+				return "Hello";
 			}
 		})
 	})
