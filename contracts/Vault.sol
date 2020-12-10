@@ -31,6 +31,12 @@ contract Vault is Ownable {
         yCakeToken.mint(address(this), 100000 * 10 ** yCakeToken.decimals());
     }
 
+    /// @notice Approves the active Strategy contract to manage funds in Vault and vice versa
+    function approveStrategy() external onlyStrategist {
+        cakeToken.approve(strategyAddress, uint256(-1));
+        Strategy(strategyAddress).acceptTokens(address(cakeToken), uint256(-1));
+    }
+
     /// @notice Accepts cakes, mints yCakes
     /// @dev Minting yCake should be possible, since the contract should have the MINTER_ROLE
     function deposit(uint256 _amount) public {
@@ -51,7 +57,7 @@ contract Vault is Ownable {
         require(yCakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough funds");
         getFromStrategy(_amount);
         yCakeToken.burn(msg.sender, _amount);
-        cakeToken.transferFrom(address(this), msg.sender, _amount);
+        cakeToken.transferFrom(address(this), msg.sender, _amount);     // FAIL: 'BEP20: transfer amount exceeds allowance'
         emit Withdraw(msg.sender, _amount);
     }
 
@@ -62,10 +68,7 @@ contract Vault is Ownable {
 
     /// @notice Forwards the deposited amount to the Strategy contract
     function sendToStrategy(uint256 _amount) internal {
-        cakeToken.approve(strategyAddress, 0);  // Security reasons
-        cakeToken.approve(strategyAddress, _amount);
-        cakeToken.transferFrom(address(this), strategyAddress, _amount);    // Fail with error 'BEP20: transfer amount exceeds allowance'
-        Strategy(strategyAddress).acceptTokens(address(cakeToken), _amount);
+        Strategy(strategyAddress).deposit(address(cakeToken), _amount);
     }
 
     /// @notice Gets the tokens from the Strategy contract
