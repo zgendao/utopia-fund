@@ -10,11 +10,22 @@ contract Vault is Ownable {
     IBEP20 private cakeToken;
     BEP20Mintable private yCakeToken;
     address private strategyAddress;
+    address private strategist;
 
     event Deposit(address account, uint256 amount);
     event Withdraw(address account, uint256 amount);
+    event ChangedCakeAddress(address newAddress);
+    event ChangedStrategy(address newAddress);
+    event ChangedStrategist(address strategist);
+
+    /// @notice Only the strategist has permissions to reinvest, harvest or set the strategy
+    modifier onlyStrategist() {
+        require(msg.sender == strategist, "!strategist");
+        _;
+    }
 
     constructor() {
+        strategist = msg.sender;
         cakeToken = IBEP20(0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82);
         yCakeToken = new BEP20Mintable("yCake Token", "yCake");
         yCakeToken.mint(address(this), 100000 * 10 ** yCakeToken.decimals());
@@ -53,9 +64,7 @@ contract Vault is Ownable {
     function sendToStrategy(uint256 _amount) internal {
         cakeToken.approve(strategyAddress, 0);  // Security reasons
         cakeToken.approve(strategyAddress, _amount);
-        cakeToken.transferFrom(address(this), strategyAddress, _amount);    // Fail with error 'BEP20: transfer amount exceeds allowance' (én -> vault)
-                                                                            // Possibly approve nem azt approve-olja, akit kell
-                                                                            // Lehet az a sender (én), nem a contractot engedélyezi?
+        cakeToken.transferFrom(address(this), strategyAddress, _amount);    // Fail with error 'BEP20: transfer amount exceeds allowance'
         Strategy(strategyAddress).acceptTokens(address(cakeToken), _amount);
     }
 
@@ -65,18 +74,26 @@ contract Vault is Ownable {
     }
 
     /// @notice Changes the address of the Strategy token. Use in case it gets changed in the future
-    function changeStrategyAddress(address _newAddress) public onlyOwner {
+    function setStrategy(address _newAddress) external onlyOwner {
         strategyAddress = _newAddress;
+        emit ChangedStrategy(_newAddress);
     }
 
     /// @notice Changes the address of the Cake token. Use in case it gets changed in the future
-    function changeCakeAddress(address _newAddress) public onlyOwner {
+    function setCakeAddress(address _newAddress) external onlyOwner {
         cakeToken = IBEP20(_newAddress);
+        emit ChangedCakeAddress(_newAddress);
+    }
+
+    /// @notice Changes the address of the strategist
+    function setStrategistAddress(address _newAddress) external onlyStrategist {
+        strategist = _newAddress;
+        emit ChangedStrategist(_newAddress);
     }
 
     /// @notice Gets the yCake balance of the depositor
     /// @return The amount of yCakes the depositor has
-    function getBalance() public view returns (uint256) {
+    function getBalance() external view returns (uint256) {
         return yCakeToken.balanceOf(msg.sender);
     }
 
