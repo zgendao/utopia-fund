@@ -10,7 +10,7 @@ interface PoolInterface {
     function deposit(uint256 _amount) external;
 }
 
-contract Strategy {
+contract Strategy is Ownable{
 
     address private vaultAddress;
     address private strategistAddress;
@@ -42,7 +42,6 @@ contract Strategy {
         activePoolAddress = _poolAddress;
         activeRewardTokenAddress = _rewardTokenAddress;
         //ide kell a pancake flip végtelen approve a pool fele
-        //ide kell majd a végtelen approve a Vault fele
     }
 
     modifier onlyVault(){
@@ -55,34 +54,33 @@ contract Strategy {
         _;
     }
 
-    /// @notice Approves Vault to manage the amount of tokens it sent to Strategy
+    /// @notice Approves Vault to manage the amount of tokens it just got
     /// @param _wot The address of the BEP20 token the function accepted
     /// @param _amount The amount of tokens it accepted
-    function acceptTokens(address _wot, uint256 _amount) external {
+    function acceptTokens(address _wot, uint256 _amount) public onlyStrategist {
         IBEP20(_wot).approve(msg.sender, _amount);
     }
 
-    //mielőtt ezt a Vault meghívja a tokeneket el kell küldeni a Strategy-nek
     function deposit (uint256 _amount) external onlyVault {
         cakeToken.transferFrom(msg.sender, address(this), _amount);
         PoolInterface(activePoolAddress).deposit(_amount);
         balance += _amount;
     }
 
-     function withdraw (uint256 _amount) external onlyVault {
+
+    function withdraw (uint256 _amount) external onlyVault {
         require(balance >= _amount, "There isn't enough balance");
         PoolInterface(activePoolAddress).withdraw(_amount);
-        cakeToken.transferFrom(address(this), vaultAddress, _amount);
-        //ide lehet kell approve
-        rewardToken.transferFrom(address(this), strategistAddress, rewardToken.balanceOf(address(this)));
+        cakeToken.transfer(vaultAddress, _amount);
+        rewardToken.transfer(strategistAddress, rewardToken.balanceOf(address(this)));
         balance -= _amount;
     }
-    
+
+
     function withdrawAll () external onlyStrategist {
         PoolInterface(activePoolAddress).withdraw(balance);
-        cakeToken.transferFrom(address(this), vaultAddress, balance);
-        //ide lehet kell approve
-        rewardToken.transferFrom(address(this), strategistAddress, rewardToken.balanceOf(address(this)));
+        cakeToken.transfer(vaultAddress, balance);
+        rewardToken.transfer(strategistAddress, rewardToken.balanceOf(address(this)));
         balance = 0;
     }
 
@@ -90,8 +88,7 @@ contract Strategy {
     function harvest () external onlyStrategist {
         PoolInterface(activePoolAddress).withdraw(balance);
         PoolInterface(activePoolAddress).deposit(balance);
-        //ide lehet kell approve
-        rewardToken.transferFrom(address(this), strategistAddress, rewardToken.balanceOf(address(this)));
+        rewardToken.transfer(strategistAddress, rewardToken.balanceOf(address(this)));
     }
 
 
@@ -99,8 +96,7 @@ contract Strategy {
         require(pools[_symbolOfNewPool] != address(0x0), "This pool doesn't exist");
         require(rewardTokens[_symbolOfNewRewardToken] != address(0x0), "This token doesn't exist");
         PoolInterface(activePoolAddress).withdraw(balance);
-        //ide lehet kell approve
-        rewardToken.transferFrom(address(this), strategistAddress, rewardToken.balanceOf(address(this)));
+        rewardToken.transfer(strategistAddress, rewardToken.balanceOf(address(this)));
         activePoolAddress = pools[_symbolOfNewPool];
         activeRewardTokenAddress = rewardTokens[_symbolOfNewRewardToken];
         PoolInterface(activePoolAddress).deposit(balance);
@@ -123,5 +119,4 @@ contract Strategy {
         activeRewardTokenAddress = rewardTokens[_rewardTokenSymbol];
 
     }
-
 }
