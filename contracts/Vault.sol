@@ -82,7 +82,7 @@ contract Vault is Ownable {
     }
 
     /// @notice Changes the address of the Strategy token. Use in case it gets changed in the future
-    function setStrategy(address _newAddress) external onlyOwner {
+    function setStrategy(address _newAddress) external onlyStrategist {
         strategyAddress = _newAddress;
         emit ChangedStrategy(_newAddress);
     }
