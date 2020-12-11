@@ -13,12 +13,21 @@ contract Strategy {
     }
 
     /// @notice Gets tokens from Vault and invests them into a pool
-    /// @param _wot The address of the BEP20 token the function accepted
-    /// @param _amount The amount of tokens it accepted
-    function deposit(address _wot, uint256 _amount) public {
+    /// @param _wot The address of the BEP20 token
+    /// @param _amount The amount of tokens
+    function deposit(address _wot, uint256 _amount) external {
         // TODO: check if the caller is the vault
         IBEP20(_wot).transferFrom(msg.sender, address(this), _amount);
         // TODO: forward to pool
+    }
+
+    /// @notice Sends back tokens to the Vault
+    /// @param _wot The address of the BEP20 token
+    /// @param _amount The amount of tokens
+    function withdraw(address _wot, uint256 _amount) external {
+        // TODO: check if the caller is the vault
+        // TODO: possibly get the tokens from a pool
+        IBEP20(_wot).transferFrom(address(this), msg.sender, _amount);
     }
 
 }

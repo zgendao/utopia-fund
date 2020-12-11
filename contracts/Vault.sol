@@ -31,6 +31,11 @@ contract Vault is Ownable {
         yCakeToken.mint(address(this), 100000 * 10 ** yCakeToken.decimals());
     }
 
+    /// @notice Approve the Vault to manage the investors tokens. Needed while withdrawing
+    function approveVault() external {
+        cakeToken.approve(msg.sender, uint(-1));
+    }
+
     /// @notice Approves the active Strategy contract to manage funds in Vault and vice versa
     function approveStrategy() external onlyStrategist {
         cakeToken.approve(strategyAddress, uint256(-1));
@@ -57,7 +62,7 @@ contract Vault is Ownable {
         require(yCakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough funds");
         getFromStrategy(_amount);
         yCakeToken.burn(msg.sender, _amount);
-        cakeToken.transferFrom(address(this), msg.sender, _amount);     // FAIL: 'BEP20: transfer amount exceeds allowance'
+        cakeToken.transferFrom(address(this), msg.sender, _amount);
         emit Withdraw(msg.sender, _amount);
     }
 
@@ -68,12 +73,12 @@ contract Vault is Ownable {
 
     /// @notice Forwards the deposited amount to the Strategy contract
     function sendToStrategy(uint256 _amount) internal {
-        Strategy(strategyAddress).deposit(address(cakeToken), _amount);
+        Strategy(strategyAddress).deposit(address(cakeToken), _amount); // Fail with error 'BEP20: transfer amount exceeds allowance'
     }
 
     /// @notice Gets the tokens from the Strategy contract
     function getFromStrategy(uint256 _amount) internal {
-        cakeToken.transferFrom(strategyAddress, address(this), _amount);
+        Strategy(strategyAddress).withdraw(address(cakeToken), _amount);
     }
 
     /// @notice Changes the address of the Strategy token. Use in case it gets changed in the future
