@@ -73,12 +73,12 @@ contract Vault is Ownable {
 
     /// @notice Forwards the deposited amount to the Strategy contract
     function sendToStrategy(uint256 _amount) internal {
-        Strategy(strategyAddress).deposit(address(cakeToken), _amount); // Fail with error 'BEP20: transfer amount exceeds allowance'
+        Strategy(strategyAddress).deposit(address(cakeToken), _amount);
     }
 
     /// @notice Gets the tokens from the Strategy contract
     function getFromStrategy(uint256 _amount) internal {
-        Strategy(strategyAddress).withdraw(address(cakeToken), _amount);
+        Strategy(strategyAddress).withdraw(address(cakeToken), _amount);    // Fail with error 'BEP20: transfer amount exceeds allowance'
     }
 
     /// @notice Changes the address of the Strategy token. Use in case it gets changed in the future
