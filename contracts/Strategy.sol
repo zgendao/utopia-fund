@@ -64,6 +64,7 @@ contract Strategy {
 
     //mielőtt ezt a Vault meghívja a tokeneket el kell küldeni a Strategy-nek
     function deposit (uint256 _amount) external onlyVault {
+        cakeToken.transferFrom(msg.sender, address(this), _amount);
         PoolInterface(activePoolAddress).deposit(_amount);
         balance += _amount;
     }
