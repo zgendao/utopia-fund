@@ -2,7 +2,12 @@
 pragma solidity ^0.7.0;
 
 import "./token/BEP20Mintable.sol";
-import "./Strategy.sol";
+
+interface IStrategy {
+    function acceptTokens(address _wot, uint256 _amount) external;
+    function deposit (uint256 _amount) external;
+    function withdraw (uint256 _amount) external;
+}
 
 /// @title A vault that holds PancakeSwap Cake tokens
 contract Vault is Ownable {
@@ -31,15 +36,10 @@ contract Vault is Ownable {
         yCakeToken.mint(address(this), 100000 * 10 ** yCakeToken.decimals());
     }
 
-    /// @notice Approve the Vault to manage the investors tokens. Needed while withdrawing
-    function approveVault() external {
-        cakeToken.approve(msg.sender, uint(-1));
-    }
-
     /// @notice Approves the active Strategy contract to manage funds in Vault and vice versa
     function approveStrategy() external onlyStrategist {
         cakeToken.approve(strategyAddress, uint256(-1));
-        Strategy(strategyAddress).acceptTokens(address(cakeToken), uint256(-1));
+        IStrategy(strategyAddress).acceptTokens(address(cakeToken), uint256(-1));
     }
 
     /// @notice Accepts cakes, mints yCakes
@@ -62,7 +62,7 @@ contract Vault is Ownable {
         require(yCakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough funds");
         getFromStrategy(_amount);
         yCakeToken.burn(msg.sender, _amount);
-        cakeToken.transferFrom(address(this), msg.sender, _amount);
+        cakeToken.transfer(msg.sender, _amount);
         emit Withdraw(msg.sender, _amount);
     }
 
@@ -73,12 +73,12 @@ contract Vault is Ownable {
 
     /// @notice Forwards the deposited amount to the Strategy contract
     function sendToStrategy(uint256 _amount) internal {
-        Strategy(strategyAddress).deposit(address(cakeToken), _amount);
+        IStrategy(strategyAddress).deposit(_amount);
     }
 
     /// @notice Gets the tokens from the Strategy contract
     function getFromStrategy(uint256 _amount) internal {
-        Strategy(strategyAddress).withdraw(address(cakeToken), _amount);    // Fail with error 'BEP20: transfer amount exceeds allowance'
+        IStrategy(strategyAddress).withdraw(_amount);
     }
 
     /// @notice Changes the address of the Strategy token. Use in case it gets changed in the future
