@@ -133,12 +133,10 @@ contract Strategy is Ownable{
     function harvest () external onlyStrategist {
         if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
             uint256 reward = cakePool.pendingCake(0, address(this));
-            cakePool.leaveStaking(balance);
-            cakePool.enterStaking(balance);
+            cakePool.leaveStaking(0);
             rewardToken.transfer(strategistAddress, reward);
         } else {
-            PoolInterface(activePoolAddress).withdraw(balance);
-            PoolInterface(activePoolAddress).deposit(balance);
+            PoolInterface(activePoolAddress).withdraw(0);
             rewardToken.transfer(strategistAddress, rewardToken.balanceOf(address(this)));
         }
     }
