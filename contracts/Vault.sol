@@ -40,7 +40,7 @@ contract Vault is Ownable {
         IStrategy(strategyAddress).acceptTokens(address(cakeToken), uint256(-1));
     }
 
-    /// @notice Accepts cakes, mints yCakes
+    /// @notice Accepts cakes, mints yCakes to the investor. Forwards the deposited amount to the active strategy contract
     /// @dev Minting yCake should be possible, since the contract should have the MINTER_ROLE
     function deposit(uint256 _amount) public {
         require(_amount > 0, "Only a positive value can be deposited");
@@ -48,30 +48,20 @@ contract Vault is Ownable {
         require(cakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough funds");
         cakeToken.transferFrom(msg.sender, address(this), _amount);
         yCakeToken.mint(msg.sender, _amount);
-        sendToStrategy(_amount);
+        IStrategy(strategyAddress).deposit(_amount);
         emit Deposit(msg.sender, _amount);
     }
 
-    /// @notice Burns yCakes, gives back Cakes
+    /// @notice Gets the tokens from the active strategy contract. Burns yCakes, gives back the Cakes to the investor
     /// @dev Burning yCake should be possible, since the contract should have the MINTER_ROLE
     function withdraw(uint256 _amount) public {
         require(_amount > 0, "Only a positive value can be withdrawn");
         require(yCakeToken.allowance(msg.sender, address(this)) >= _amount, "yCake allowance not sufficient");
         require(yCakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough funds");
-        getFromStrategy(_amount);
+        IStrategy(strategyAddress).withdraw(_amount);
         yCakeToken.burn(msg.sender, _amount);
         cakeToken.transfer(msg.sender, _amount);
         emit Withdraw(msg.sender, _amount);
-    }
-
-    /// @notice Forwards the deposited amount to the Strategy contract
-    function sendToStrategy(uint256 _amount) internal {
-        IStrategy(strategyAddress).deposit(_amount);
-    }
-
-    /// @notice Gets the tokens from the Strategy contract
-    function getFromStrategy(uint256 _amount) internal {
-        IStrategy(strategyAddress).withdraw(_amount);
     }
 
     /// @notice Changes the address of the Strategy token. Use in case it gets changed in the future
