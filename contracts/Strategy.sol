@@ -75,10 +75,10 @@ contract Strategy is Ownable{
         _;
     }
 
-    /// @notice Approves Vault to manage the amount of tokens it just got
-    /// @param _wot The address of the BEP20 token the function accepted
-    /// @param _amount The amount of tokens it accepted
-    function acceptTokens(address _wot, uint256 _amount) public onlyStrategist {
+    /// @notice Approves Vault to manage the tokens it sends to Strategy
+    /// @param _wot The address of the BEP20 token to approve
+    /// @param _amount The amount of tokens to approve
+    function acceptTokens(address _wot, uint256 _amount) external onlyVault {
         IBEP20(_wot).approve(msg.sender, _amount);
     }
 
