@@ -153,7 +153,6 @@ contract Strategy is Ownable{
         if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
             uint256 reward = cakePool.pendingCake(0, address(this));
             cakePool.leaveStaking(balance);
-            cakeToken.transfer(vaultAddress, balance);
             rewardToken.transfer(strategistAddress, reward);
         } else {
             PoolInterface(activePoolAddress).withdraw(balance);
