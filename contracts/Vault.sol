@@ -21,7 +21,6 @@ contract Vault is Ownable {
     event Withdraw(address account, uint256 amount);
     event ChangedCakeAddress(address newAddress);
     event ChangedStrategy(address newAddress);
-    event ChangedStrategist(address strategist);
 
     /// @notice Only the strategist has permissions to reinvest, harvest or set the strategy
     modifier onlyStrategist() {
@@ -29,11 +28,10 @@ contract Vault is Ownable {
         _;
     }
 
-    constructor() {
-        strategist = msg.sender;
+    constructor(address _strategistAddress) {
+        strategist = _strategistAddress;
         cakeToken = IBEP20(0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82);
         yCakeToken = new BEP20Mintable("yCake Token", "yCake");
-        yCakeToken.mint(address(this), 100000 * 10 ** yCakeToken.decimals());
     }
 
     /// @notice Approves the active Strategy contract to manage funds in Vault and vice versa
@@ -66,11 +64,6 @@ contract Vault is Ownable {
         emit Withdraw(msg.sender, _amount);
     }
 
-    /// @notice Withdraws all the cakes of the sender
-    function withdrawAll() public {
-        withdraw(yCakeToken.balanceOf(msg.sender));
-    }
-
     /// @notice Forwards the deposited amount to the Strategy contract
     function sendToStrategy(uint256 _amount) internal {
         IStrategy(strategyAddress).deposit(_amount);
@@ -91,18 +84,6 @@ contract Vault is Ownable {
     function setCakeAddress(address _newAddress) external onlyOwner {
         cakeToken = IBEP20(_newAddress);
         emit ChangedCakeAddress(_newAddress);
-    }
-
-    /// @notice Changes the address of the strategist
-    function setStrategistAddress(address _newAddress) external onlyStrategist {
-        strategist = _newAddress;
-        emit ChangedStrategist(_newAddress);
-    }
-
-    /// @notice Gets the yCake balance of the depositor
-    /// @return The amount of yCakes the depositor has
-    function getBalance() external view returns (uint256) {
-        return yCakeToken.balanceOf(msg.sender);
     }
 
     /// @notice Gets the yCake balance of _account
