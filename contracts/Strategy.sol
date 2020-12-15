@@ -115,7 +115,7 @@ contract Strategy is Ownable{
 
     /// @notice A Strategist kérésére az aktív pool-ból kivesz minden tokent, a nyereséget elküldi a Strategist-nek,
     /// a többit a Vaultnak. A kezelt összeget 0-ra állítja
-    function withdrawAll () external onlyStrategist {
+    function withdrawAll () external onlyVault returns (uint256) {
         if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
             uint256 reward = cakePool.pendingCake(0, address(this));
             cakePool.leaveStaking(balance);
@@ -126,7 +126,9 @@ contract Strategy is Ownable{
             cakeToken.transfer(vaultAddress, balance);
             rewardToken.transfer(strategistAddress, rewardToken.balanceOf(address(this)));
         }
+        uint256 amount = balance;
         balance = 0;
+        return amount;
     }
 
     /// @notice Nincs harvest függvény de a withdraw elküldi a jutalmat is.

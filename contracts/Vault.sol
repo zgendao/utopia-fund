@@ -5,8 +5,9 @@ import "./token/BEP20Mintable.sol";
 
 interface IStrategy {
     function acceptTokens(address _wot, uint256 _amount) external;
-    function deposit (uint256 _amount) external;
-    function withdraw (uint256 _amount) external;
+    function deposit(uint256 _amount) external;
+    function withdraw(uint256 _amount) external;
+    function withdrawAll() external returns (uint256);
 }
 
 /// @title A vault that holds PancakeSwap Cake tokens
@@ -64,9 +65,11 @@ contract Vault is Ownable {
         emit Withdraw(msg.sender, _amount);
     }
 
-    /// @notice Changes the address of the Strategy token. Use in case it gets changed in the future
+    /// @notice Changes the address of the active Strategy
     function setStrategy(address _newAddress) external onlyStrategist {
+        uint256 amount = IStrategy(strategyAddress).withdrawAll();
         strategyAddress = _newAddress;
+        IStrategy(_newAddress).deposit(amount);
         emit ChangedStrategy(_newAddress);
     }
 
