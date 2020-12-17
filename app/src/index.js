@@ -1,7 +1,6 @@
 import Web3 from "web3"
 import { addr } from "./crypto_helper.mjs"
-import { getAPY, printAPY } from "./APY.mjs"
-import { get } from "http"
+import { getAPY } from "./APY.mjs"
 
 const App = {
 	web3: null,
