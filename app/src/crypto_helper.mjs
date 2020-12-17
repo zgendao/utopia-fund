@@ -14,5 +14,5 @@ export const coingecko_ids = {
 	"0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82" : "pancakeswap-token",
 	"0x4b0f1812e5df2a09796481ff14017e6005508003" : "trust-wallet-token",
 	"0x728c5bac3c3e370e372fc4671f9ef6916b814d8b" : "unifi-protocol-dao",
-	"0x63870a18b6e42b01ef1ad8a2302ef50b7132054f" : "blackcoin"
+	"0x63870a18b6e42b01ef1ad8a2302ef50b7132054f" : "blink"
 }

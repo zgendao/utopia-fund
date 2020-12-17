@@ -11,6 +11,7 @@ let cakeAmountInContract	// how much CAKE is in the contract
 let cakePrice				// current price of CAKE in USD
 let blockDiff				// the difference between the current and last block
 							// (how many blocks left)
+let decimals				// how many decimals is the token contract using
 
 /**
  * A function to calculate the APY of a syrup pool
@@ -36,7 +37,7 @@ export async function getAPY(web3, address, rewardToken, callback) {
 				let getBonusEndBlock = async () => {
 					// there is no 'bonusEndBlock' in the CAKE pool
 					if (address === addr["cake_pool"])
-						return currentBlock + (60 * 60 * 8 * 365)
+						return currentBlock + (60 * 60 * 8 * 365) // 8 is 24 / 3
 
 					return await contract.methods.bonusEndBlock.call().call()
 				}
@@ -44,21 +45,40 @@ export async function getAPY(web3, address, rewardToken, callback) {
 				let getRewardPerBlock = async () => {
 					// the variable is called 'cakePerBlock' insteod of 'rewardPerBlock'
 					if (address === addr["cake_pool"])
-						return 10
+						return 10 ** 19
 
 					return await contract.methods.rewardPerBlock.call().call()
 				}
 
+				let getDecimals = async () => {
+					let tokenContract
+
+					await $.ajax({
+						url: `https://api.bscscan.com/api?module=contract&action=getabi&address=${rewardToken}`,
+						dataType: 'json',
+						async: false,
+						success: function (data) {
+							const tokenAbi = JSON.parse(data['result'])
+							tokenContract = new web3.eth.Contract(tokenAbi, rewardToken)
+						}
+					})
+
+					return await tokenContract.methods.decimals.call().call()
+				}
+
 				// we get the block number of the last block and the amount of rewards per block
-				Promise.all([getBonusEndBlock(), getRewardPerBlock()]).then((values) => {
+				Promise.all([getBonusEndBlock(), getRewardPerBlock(), getDecimals()]).then((values) => {
 					bonusEndBlock = values[0]
 					rewardPerBlock = values[1]
 					blockDiff = bonusEndBlock - currentBlock
+
+					decimals = values[2]
 	
 					console.log(`currentBlock: ${currentBlock}`)
 					console.log(`bonusEndBlock: ${bonusEndBlock}`)
 					console.log(`rewardPerBlock: ${rewardPerBlock}`)
 					console.log(`blockDiff: ${blockDiff}`)
+					console.log(`decimals: ${decimals}`)
 
 					// the amount of CAKE in the pool
 					$.ajax({
@@ -95,18 +115,16 @@ export async function getAPY(web3, address, rewardToken, callback) {
 
 					// we are ready to calculate the APY and send it back to the callback function
 					callback(
-						(rewardPerBlock * rewardTokenPrice)
+						(rewardPerBlock * rewardTokenPrice * (10 ** 18 / 10 ** decimals))
 						/
 						(cakeAmountInContract * cakePrice)
 						*
-						(address === addr["blk_pool"] ? 1000000000000 / 3: 1)
-						*
-						(365 * 60 * 60 * 8)
+						(365 * 60 * 60 * 8) // 8 is 24 / 3
 					)
 				})
-			}, 
+			},
 			error: function() {
-				return -1;
+				return -1
 			}
 		})
 	})
