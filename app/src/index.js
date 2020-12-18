@@ -36,41 +36,46 @@ const App = {
 		const { web3 } = this
 
 		try {
-			// get network id
-			const networkId = await web3.eth.net.getId()
-
 			// get accounts
 			const accounts = await web3.eth.getAccounts()
 			this.account = accounts[0]
 
-			var APYgetter = new Promise((resolve, reject) => {
-				let counter = 0;
-				// looping through each pool
-				pools.forEach(
-					pool => {
-						function cb(APY) {
-							console.log(APY)
-							pool.APY = APY
-						
-							// finding the highest APY
-							if (pool.APY > bestAPY) {
-								bestAPY = pool.APY
-								bestAPYPool = pool.address
-							}
+			function updateAPY() {
+				new Promise((resolve, reject) => {
+					let counter = 0
+					// looping through each pool
+					pools.forEach(
+						pool => {
+							function cb(APY) {
+								console.log(APY)
+								pool.APY = APY
 							
-							if (counter++ === 3)
-								resolve()
+								// finding the highest APY
+								if (pool.APY > bestAPY) {
+									bestAPY = pool.APY
+									bestAPYPool = pool.address
+								}
+								
+								if (counter++ === 3)
+									resolve()
+							}
+	
+							getAPY(web3, pool.address, pool.reward, cb)
 						}
+					)
+				}).then(() => {
+					console.log(`The address of the pool with the highest APY is ${bestAPYPool}`)
+					console.log(`The highest APY is ${bestAPY}`)
 
-						getAPY(web3, pool.address, pool.reward, cb)
-					}
-				)
-			})
+					let today = new Date()
+					console.log(`Current time is ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`)
+				})
+			}
 
-			APYgetter.then(() => {
-				console.log(`The address of the pool with the highest APY is ${bestAPYPool}`)
-				console.log(`The highest APY is ${bestAPY}`)
-			})
+			updateAPY()
+
+			// calling the updateAPY function every three hours
+			setInterval(() => updateAPY(), 1000 * 60 * 60 * 3)
 		} catch (error) {
 			console.error(error)
 		}
