@@ -30,6 +30,7 @@ contract Strategy is Ownable{
 
     mapping(string => address) pools;
     mapping(string => address) rewardTokens;
+    mapping(string => string) tokenOfPool;
 
     IBEP20 private cakeToken;
     IBEP20 private rewardToken;
@@ -57,6 +58,7 @@ contract Strategy is Ownable{
         strategistAddress = _strategistAddress;
         pools[_poolSymbol] = _poolAddress;
         rewardTokens[_rewardTokenSymbol] = _rewardTokenAddress;
+        tokenOfPool[_poolSymbol] = _rewardTokenSymbol;
         activePoolAddress = _poolAddress;
         activeRewardTokenAddress = _rewardTokenAddress;
         cakeToken.approve(activePoolAddress, uint256(-1));
@@ -147,10 +149,9 @@ contract Strategy is Ownable{
     /// elküldi a nyereséget a Strategist-nek majd mindent berak az új aktív pool-ba
     /// @dev Fontos, hogy a pool és a token összetartozzon és már korábban el legyen tárolva
     /// @param _symbolOfNewPool Az új pool-t beazonosító szimbólum
-    /// @param _symbolOfNewRewardToken Az új jutalomként kapott tokent beazonosító szimbólum
-    function reinvest (string memory _symbolOfNewPool, string memory _symbolOfNewRewardToken) external onlyStrategist {
+    function reinvest (string memory _symbolOfNewPool) external onlyStrategist {
         require(pools[_symbolOfNewPool] != address(0x0), "This pool doesn't exist");
-        require(rewardTokens[_symbolOfNewRewardToken] != address(0x0), "This token doesn't exist");
+        require(rewardTokens[tokenOfPool[_symbolOfNewPool]] != address(0x0), "This token doesn't exist");
 
         if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
             uint256 reward = cakePool.pendingCake(0, address(this));
@@ -162,7 +163,8 @@ contract Strategy is Ownable{
         }
 
         activePoolAddress = pools[_symbolOfNewPool];
-        activeRewardTokenAddress = rewardTokens[_symbolOfNewRewardToken];
+        activeRewardTokenAddress = rewardTokens[tokenOfPool[_symbolOfNewPool]];
+        rewardToken = IBEP20(activeRewardTokenAddress);
 
         if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
             cakePool.enterStaking(balance);
@@ -171,19 +173,25 @@ contract Strategy is Ownable{
         }
     }
 
-    /// @notice Új pool-t és reward tokent ad a tároltak listájához. Csak az Owner tudja meghívni
-    /// @dev Fontos, hogy a Strategy contractot NE a Strategist deploy-olja biztonsági okokból.
-    /// A token és a pool összetartozó legyen
+    /// @notice Új pool-t ad a tároltak listájához. Csak az Owner tudja meghívni
+    /// @dev A token és a pool összetartozó legyen és a zoken már el legyen tárolva
     /// @param _poolSymbol Az új pool-t beazonosító szimbólum
     /// @param _poolAddress Az új pool címe
+    /// @param _rewardTokenSymbol A jutalomként kapott tokent beazonosító szimbólum
+    function addPool(string memory _poolSymbol, address _poolAddress, string memory _rewardTokenSymbol) external onlyOwner {
+        require(pools[_poolSymbol] == address(0x0), "This pool is already set");
+        require(rewardTokens[tokenOfPool[_poolSymbol]] != address(0x0), "This token doesn't exist");
+        pools[_poolSymbol] = _poolAddress;
+        tokenOfPool[_poolSymbol] = _rewardTokenSymbol;
+        cakeToken.approve(_poolAddress, uint256(-1));
+    }
+
+    /// @notice Új reward tokent ad a tároltak listájához. Csak az Owner tudja meghívni
     /// @param _rewardTokenSymbol Az új jutalomként kapott tokent beazonosító szimbólum
     /// @param _rewardTokenAddress Az új jutalomként kapott token address-e
-    function addPool(string memory _poolSymbol, address _poolAddress, string memory _rewardTokenSymbol, address _rewardTokenAddress) external onlyOwner {
-        require(pools[_poolSymbol] == address(0x0), "This pool is already set");
+    function addToken(string memory _rewardTokenSymbol, address _rewardTokenAddress) external onlyOwner {
         require(rewardTokens[_rewardTokenSymbol] == address(0x0), "This token is already set");
-        pools[_poolSymbol] = _poolAddress;
         rewardTokens[_rewardTokenSymbol] = _rewardTokenAddress;
-        cakeToken.approve(_poolAddress, uint256(-1));
     }
 
     /// @notice Egy már korábban megadott pool és reward token aktívra állítása. Csak az Owner tudja meghívni
@@ -192,11 +200,11 @@ contract Strategy is Ownable{
     /// Ennek az a célja, hogy se a Strategist se az Owner ne tudjon visszaélni.
     /// A pool váltáshoz mind a kettő hozzájárulására szükség van.
     /// @param _poolSymbol Az új pool-t beazonosító szimbólum
-    /// @param _rewardTokenSymbol Az új jutalomként kapott tokent beazonosító szimbólum
-    function rollback(string memory _poolSymbol, string memory _rewardTokenSymbol) external onlyOwner {
+    function rollback(string memory _poolSymbol) external onlyOwner {
         require(pools[_poolSymbol] != address(0x0), "This pool doesn't exist");
-        require(rewardTokens[_rewardTokenSymbol] != address(0x0), "This token doesn't exist");
+        require(rewardTokens[tokenOfPool[_poolSymbol]] != address(0x0), "This token doesn't exist");
         activePoolAddress = pools[_poolSymbol];
-        activeRewardTokenAddress = rewardTokens[_rewardTokenSymbol];
+        activeRewardTokenAddress = rewardTokens[tokenOfPool[_poolSymbol]];
+        rewardToken = IBEP20(activeRewardTokenAddress);
     }
 }
