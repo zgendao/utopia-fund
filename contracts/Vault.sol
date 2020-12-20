@@ -66,10 +66,18 @@ contract Vault is Ownable {
     }
 
     /// @notice Changes the address of the active Strategy
-    function setStrategy(address _newAddress) external onlyStrategist {
+    function changeStrategy(address _newAddress) external onlyStrategist {
         uint256 amount = IStrategy(strategyAddress).withdrawAll();
         strategyAddress = _newAddress;
         IStrategy(_newAddress).deposit(amount);
+        emit ChangedStrategy(_newAddress);
+    }
+
+    /// @notice Changes the address of the active Strategy
+    function setStrategy(address _newAddress) external onlyStrategist {
+        require(strategyAddress == address(0x0), "Strategy is already set");
+        require(_newAddress != address(0x0), "Invalid address");
+        strategyAddress = _newAddress;
         emit ChangedStrategy(_newAddress);
     }
 
