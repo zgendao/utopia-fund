@@ -3,7 +3,6 @@ pragma solidity ^0.7.0;
 
 import "./token/IBEP20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 
 interface PoolInterface {
     function deposit(uint256 _amount) external;
@@ -19,14 +18,13 @@ interface CAKEPoolInterface {
 }
 
 contract Strategy is Ownable{
-    using SafeMath for uint256;
 
     address private vaultAddress;
     address private strategistAddress;
     address private activePoolAddress;
     address private activeRewardTokenAddress;
 
-    uint256 balance;
+    uint256 balance = 0;
 
     mapping(string => address) pools;
     mapping(string => address) rewardTokens;
@@ -53,7 +51,6 @@ contract Strategy is Ownable{
         address _rewardTokenAddress
         ) {
         cakeToken = IBEP20(0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82);
-        //cakeToken = IBEP20(0xf73D010412Fb5835C310728F0Ba1b7DFDe88379A);
         rewardToken = IBEP20(_rewardTokenAddress);
         vaultAddress = _vaultAddress;
         strategistAddress = _strategistAddress;
@@ -64,7 +61,6 @@ contract Strategy is Ownable{
         activeRewardTokenAddress = _rewardTokenAddress;
         cakeToken.approve(activePoolAddress, uint256(-1));
         cakePool = CAKEPoolInterface(0x73feaa1eE314F8c655E354234017bE2193C9E24E);
-        //cakePool = CAKEPoolInterface(_poolAddress);
     }
 
     /// @notice A hívó csak a Vault lehet
@@ -96,7 +92,7 @@ contract Strategy is Ownable{
             PoolInterface(activePoolAddress).deposit(_amount);
         }
         //PoolInterface(activePoolAddress).deposit(_amount);
-        balance.add(_amount);
+        balance += _amount;
     }
 
 
@@ -115,7 +111,7 @@ contract Strategy is Ownable{
             cakeToken.transfer(vaultAddress, _amount);
             rewardToken.transfer(strategistAddress, rewardToken.balanceOf(address(this)));
         }
-        balance.sub(_amount);
+        balance -= _amount;
     }
 
     /// @notice A Strategist kérésére az aktív pool-ból kivesz minden tokent, a nyereséget elküldi a Strategist-nek,
