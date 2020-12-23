@@ -36,9 +36,9 @@ contract Vault is Ownable {
     }
 
     /// @notice Approves the active Strategy contract to manage funds in Vault and vice versa
-    function approveStrategy() external onlyStrategist {
-        cakeToken.approve(strategyAddress, uint256(-1));
-        IStrategy(strategyAddress).acceptTokens(address(cakeToken), uint256(-1));
+    function approveStrategy(address _strategyAddress) external onlyStrategist {
+        cakeToken.approve(_strategyAddress, uint256(-1));
+        IStrategy(_strategyAddress).acceptTokens(address(cakeToken), uint256(-1));
     }
 
     /// @notice Accepts cakes, mints yCakes to the investor. Forwards the deposited amount to the active strategy contract
@@ -92,5 +92,4 @@ contract Vault is Ownable {
     function getBalanceOf(address _account) public view returns (uint256) {
         return yCakeToken.balanceOf(_account);
     }
-
 }
