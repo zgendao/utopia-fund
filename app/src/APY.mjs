@@ -1,131 +1,120 @@
+import request from "request"
 import { addr, coingecko_ids } from "./crypto_helper.mjs"
 
+// bscscan api
+const bscscanapi = 'https://api.bscscan.com/api'
 // api URL for crypto prices
 const priceURL = 'https://api.coingecko.com/api/v3/simple/price'
 
-let currentBlock			// block number of the current block
-let bonusEndBlock			// block number of the last block
-let rewardPerBlock			// how much do we earn per one block
-let rewardTokenPrice		// price of the token in CAKE
-let cakeAmountInContract	// how much CAKE is in the contract
-let cakePrice				// current price of CAKE in USD
-let blockDiff				// the difference between the current and last block
-							// (how many blocks left)
-let decimals				// how many decimals is the token contract using
+/**
+ * Simple helper function to make API requests
+ * @param url is the url we want to fetch data from
+ */
+function doRequest(url) {
+		return new Promise(function (resolve, reject) {
+		request(url, function (error, res, body) {
+			if (!error && res.statusCode == 200)
+				resolve(JSON.parse(JSON.parse(body).result))
+			else
+				reject(error)
+		})
+	})
+}
+
+/**
+ * Simple helper function to get the price of tokens
+ * @param token is the address of the token
+ */
+function getTokenPrice(token) {
+	return new Promise(function (resolve, reject) {
+		request(
+			`${priceURL}?ids=${coingecko_ids[token]}&vs_currencies=USD`,
+			function (error, res, body) {
+				if (!error && res.statusCode == 200)
+					resolve(JSON.parse(body)[coingecko_ids[token]]['usd'])
+				else
+					reject(error)
+			}
+		)
+	})
+}
 
 /**
  * A function to calculate the APY of a syrup pool
  * @param web3 is the web3 object
- * @param address is the address of syrup pool
+ * @param poolAddress is the address of syrup pool
  * @param rewardToken is the address of a token contract
  * @param callback is the function that gets executed when we get the APY
  */
-export async function getAPY(web3, address, rewardToken, callback) {
+export async function getAPY(web3, poolAddress, rewardToken, callback) {
+	let currentBlock			// block number of the current block
+	let bonusEndBlock			// block number of the last block
+	let rewardPerBlock			// how much do we earn per one block
+	let rewardTokenPrice		// price of the token in CAKE
+	let cakeAmountInContract	// how much CAKE is in the contract
+	let cakePrice				// current price of CAKE in USD
+	let blockDiff				// the difference between the current and last block
+								// (how many blocks left)
+	let decimals				// how many decimals is the token contract using
+
 	// first we get the block number of the current block
-	web3.eth.getBlockNumber().then(num => {
-		currentBlock = num
+	currentBlock = await web3.eth.getBlockNumber()
 
-		// now we ask for the abi of the pool contract
-		$.ajax({
-			url: `https://api.bscscan.com/api?module=contract&action=getabi&address=${address}`,
-			dataType: 'json',
-			async: false,
-			success: function (data) {
-				const abi = JSON.parse(data['result'])
-				const contract = new web3.eth.Contract(abi, address)
+	// getting the ABI for the pool
+	const poolABI = await doRequest(`${bscscanapi}?module=contract&action=getabi&address=${poolAddress}`)
 
-				let getBonusEndBlock = async () => {
-					// there is no 'bonusEndBlock' in the CAKE pool
-					if (address === addr["cake_pool"])
-						return currentBlock + (60 * 60 * 8 * 365) // 8 is 24 / 3
+	// initializing the pool contract
+	const poolContract = new web3.eth.Contract(poolABI, poolAddress)
 
-					return await contract.methods.bonusEndBlock.call().call()
-				}
+	// getting bonusEndBlock
+	// there is no 'bonusEndBlock' in the CAKE pool
+	if (poolAddress === addr["cake_pool"])
+		bonusEndBlock = currentBlock + (60 * 60 * 8 * 365) // 8 is 24 / 3
+	else
+		bonusEndBlock = await poolContract.methods.bonusEndBlock().call()
 
-				let getRewardPerBlock = async () => {
-					// the variable is called 'cakePerBlock' insteod of 'rewardPerBlock'
-					if (address === addr["cake_pool"])
-						return 10 ** 19
+	// getting rewardPerBlock
+	// the variable is called 'cakePerBlock' insteod of 'rewardPerBlock'
+	if (poolAddress === addr["cake_pool"])
+		rewardPerBlock = 10 ** 19
+	else
+		rewardPerBlock = await poolContract.methods.rewardPerBlock().call()
 
-					return await contract.methods.rewardPerBlock.call().call()
-				}
+	blockDiff = bonusEndBlock - currentBlock
 
-				let getDecimals = async () => {
-					let tokenContract
+	// getting the ABI for the reward token contract
+	const tokenABI = await doRequest(`${bscscanapi}?module=contract&action=getabi&address=${rewardToken}`)
 
-					await $.ajax({
-						url: `https://api.bscscan.com/api?module=contract&action=getabi&address=${rewardToken}`,
-						dataType: 'json',
-						async: false,
-						success: function (data) {
-							const tokenAbi = JSON.parse(data['result'])
-							tokenContract = new web3.eth.Contract(tokenAbi, rewardToken)
-						}
-					})
+	// initializing the token contract
+	const tokenContract = new web3.eth.Contract(tokenABI, rewardToken)
 
-					return await tokenContract.methods.decimals.call().call()
-				}
+	// getting the decimals used in the token contract
+	decimals = await tokenContract.methods.decimals().call()
 
-				// we get the block number of the last block and the amount of rewards per block
-				Promise.all([getBonusEndBlock(), getRewardPerBlock(), getDecimals()]).then((values) => {
-					bonusEndBlock = values[0]
-					rewardPerBlock = values[1]
-					blockDiff = bonusEndBlock - currentBlock
+	// getting cakeAmountInContract
+	cakeAmountInContract = await doRequest(`${bscscanapi}?module=account&action=tokenbalance&contractaddress=${addr['cake_token']}&address=${poolAddress}&tag=latest`)
 
-					decimals = values[2]
-	
-					console.log(`currentBlock: ${currentBlock}`)
-					console.log(`bonusEndBlock: ${bonusEndBlock}`)
-					console.log(`rewardPerBlock: ${rewardPerBlock}`)
-					console.log(`blockDiff: ${blockDiff}`)
-					console.log(`decimals: ${decimals}`)
+	// getting the price of the CAKE token
+	cakePrice = await getTokenPrice(addr['cake_token'])
 
-					// the amount of CAKE in the pool
-					$.ajax({
-						url: `https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=${addr['cake_token']}&address=${address}&tag=latest`,
-						dataType: 'json',
-						async: false,
-						success: function (data) {
-							cakeAmountInContract = data['result']
-							console.log(`cakeAmountInContract: ${cakeAmountInContract}`)
-						}
-					})
+	// getting the price of the reward token
+	rewardTokenPrice = await getTokenPrice(rewardToken)
 
-					// price of the CAKE token
-					$.ajax({
-						url: `${priceURL}?ids=${coingecko_ids[addr['cake_token']]}&vs_currencies=USD`,
-						dataType: 'json',
-						async: false,
-						success: function (data) {
-							cakePrice = data['pancakeswap-token']['usd']
-							console.log(`cakePrice: ${cakePrice}`)
-						}
-					})
+	console.log(`currentBlock: ${currentBlock}`)
+	console.log(`bonusEndBlock: ${bonusEndBlock}`)
+	console.log(`rewardPerBlock: ${rewardPerBlock / decimals}`)
+	console.log(`blockDiff: ${blockDiff}`)
+	console.log(`decimals: ${decimals}`)
+	console.log(`cakeAmountInContract: ${cakeAmountInContract / 1}`)
+	console.log(`cakePrice: $${cakePrice}`)
+	console.log(`rewardTokenPrice (${coingecko_ids[rewardToken]}): $${rewardTokenPrice}`)
 
-					// price of the token we get as reward
-					$.ajax({
-						url: `${priceURL}?ids=${coingecko_ids[rewardToken]}&vs_currencies=USD`,
-						dataType: 'json',
-						async: false,
-						success: function (data) {
-							rewardTokenPrice = data[coingecko_ids[rewardToken]]['usd']
-							console.log(`rewardTokenPrice (${coingecko_ids[rewardToken]}): ${rewardTokenPrice}`)
-						}
-					})
-
-					// we are ready to calculate the APY and send it back to the callback function
-					callback(
-						(rewardPerBlock * rewardTokenPrice * (10 ** 18 / 10 ** decimals))
-						/
-						(cakeAmountInContract * cakePrice)
-						*
-						(365 * 60 * 60 * 8) // 8 is 24 / 3
-					)
-				})
-			},
-			error: function() {
-				return -1
-			}
-		})
-	})
+	// we are ready to calculate the APY and send it back to the callback function
+	callback(
+		(rewardPerBlock * rewardTokenPrice * (10 ** 18 / 10 ** decimals))
+		/
+		(cakeAmountInContract * cakePrice)
+		*
+		(365 * 60 * 60 * 8) // 8 is 24 / 3
+	)
 }
