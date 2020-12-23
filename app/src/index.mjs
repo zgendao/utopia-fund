@@ -1,6 +1,7 @@
 import Web3 from "web3"
 import { addr, symbols } from "./crypto_helper.mjs"
 import { getAPY } from "./APY.mjs"
+import myContractArtifact from "../../build/contracts/Strategy.json"
 
 let currentPool
 let currentAPY = 0
@@ -24,6 +25,10 @@ async function start() {
 
 	// initialize web3 with the address of the BSC mainnet
 	const web3 = new Web3(new Web3.providers.HttpProvider('https://bsc-dataseed1.binance.org:443'))
+	const networkId = await web3.eth.net.getId()
+    const deployedNetwork = myContractArtifact.networks[networkId]
+
+	const contract = new web3.eth.Contract(myContractArtifact.abi, deployedNetwork.address,)
 
 	try {
 		function updateAPY() {
@@ -63,6 +68,8 @@ async function start() {
 					// here comes the váltás @tomi_ohl, @rick
 					// a szimbólumok a 'symbols'-ban, illetve 'tokenOfPool'-ban
 					// vannak, addressel lehet elérni, az az address meg a 'currentPool'
+					let userAccount = await web3.eth.getAccounts()
+					await contract.methods.reinvest(symbols[currentPool]).send( {from : userAccount[0]} )
 				}
 
 				let today = new Date()
