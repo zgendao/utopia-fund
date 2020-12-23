@@ -26,7 +26,7 @@ async function start() {
 	// initialize web3 with the address of the BSC mainnet
 	const web3 = new Web3(new Web3.providers.HttpProvider('https://bsc-dataseed1.binance.org:443'))
 	const networkId = await web3.eth.net.getId()
-    const deployedNetwork = myContractArtifact.networks[networkId]
+	const deployedNetwork = myContractArtifact.networks[networkId]
 
 	const contract = new web3.eth.Contract(myContractArtifact.abi, deployedNetwork.address,)
 
@@ -58,17 +58,16 @@ async function start() {
 						}, timerC++ * 1000)
 					}
 				)
-			}).then(() => {
+			}).then(async () => {
 				console.log(`The address of the pool with the highest APY is ${bestPool}`)
 				console.log(`The highest APY is ${bestAPY}`)
 
 				if (bestAPY >= currentAPY + 0.05) {
 					currentAPY = bestAPY
 					currentPool = bestPool
-					// here comes the váltás @tomi_ohl, @rick
-					// a szimbólumok a 'symbols'-ban, illetve 'tokenOfPool'-ban
-					// vannak, addressel lehet elérni, az az address meg a 'currentPool'
+
 					let userAccount = await web3.eth.getAccounts()
+					console.log(userAccount)
 					await contract.methods.reinvest(symbols[currentPool]).send( {from : userAccount[0]} )
 				}
 

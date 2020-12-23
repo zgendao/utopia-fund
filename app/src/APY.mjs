@@ -102,10 +102,10 @@ export async function getAPY(web3, poolAddress, rewardToken, callback) {
 
 	console.log(`currentBlock: ${currentBlock}`)
 	console.log(`bonusEndBlock: ${bonusEndBlock}`)
-	console.log(`rewardPerBlock: ${rewardPerBlock / decimals}`)
+	console.log(`rewardPerBlock: ${rewardPerBlock}`)
 	console.log(`blockDiff: ${blockDiff}`)
 	console.log(`decimals: ${decimals}`)
-	console.log(`cakeAmountInContract: ${cakeAmountInContract / 1}`)
+	console.log(`cakeAmountInContract: ${cakeAmountInContract}`)
 	console.log(`cakePrice: $${cakePrice}`)
 	console.log(`rewardTokenPrice (${coingecko_ids[rewardToken]}): $${rewardTokenPrice}`)
 
