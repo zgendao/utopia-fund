@@ -35,7 +35,7 @@ rl.question("Enter the password: ", function(password) {
 
 	// set it as the default account address
 	web3.eth.defaultAccount = userAccount.address
-	
+
 	console.log()
 	rl.close()
 })
@@ -94,7 +94,7 @@ rl.on("close", function() {
 						currentAPY = bestAPY
 						currentPool = bestPool
 	
-						await strategist.methods.reinvest(symbols[currentPool]).send( {from : web3.eth.defaultAccount, gas: 100000} )
+						await strategist.methods.reinvest(symbols[currentPool]).send( {from : web3.eth.defaultAccount, gas: 500000} )
 					}
 	
 					let today = new Date()
