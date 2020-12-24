@@ -1,5 +1,8 @@
-import request from "request"
-import { addr, coingecko_ids } from "./crypto_helper.mjs"
+const request = require('request')
+const crypto_helper = require('./crypto_helper')
+
+const addr = crypto_helper.addr
+const coingecko_ids = crypto_helper.coingecko_ids
 
 // bscscan api
 const bscscanapi = 'https://api.bscscan.com/api'
@@ -46,7 +49,7 @@ function getTokenPrice(token) {
  * @param rewardToken is the address of a token contract
  * @param callback is the function that gets executed when we get the APY
  */
-export async function getAPY(web3, poolAddress, rewardToken, callback) {
+async function getAPY(web3, poolAddress, rewardToken, callback) {
 	let currentBlock			// block number of the current block
 	let bonusEndBlock			// block number of the last block
 	let rewardPerBlock			// how much do we earn per one block
@@ -118,3 +121,5 @@ export async function getAPY(web3, poolAddress, rewardToken, callback) {
 		(365 * 60 * 60 * 8) // 8 is 24 / 3
 	)
 }
+
+module.exports = function(web3, poolAddress, rewardToken, callback) { getAPY(web3, poolAddress, rewardToken, callback) }
