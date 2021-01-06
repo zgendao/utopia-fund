@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.0;
+pragma solidity 0.7.4;
 
 import "./token/IBEP20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -19,29 +19,31 @@ interface CAKEPoolInterface {
 
 contract Strategy is Ownable{
 
-    address private vaultAddress;
-    address private strategistAddress;
-    address private activePoolAddress;
-    address private activeRewardTokenAddress;
+    address internal vaultAddress;
+    address internal strategistAddress;
+    address internal activePoolAddress;
+    address internal activeRewardTokenAddress;
+    address internal cakePoolAddress = 0x73feaa1eE314F8c655E354234017bE2193C9E24E;
+    address internal cakeTokenAddress = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
 
-    uint256 balance = 0;
+    uint256 public balance = 0;
 
-    mapping(string => address) pools;
-    mapping(string => address) rewardTokens;
-    mapping(string => string) tokenOfPool;
+    mapping(string => address) internal pools;
+    mapping(string => address) internal rewardTokens;
+    mapping(string => string) internal tokenOfPool;
 
-    IBEP20 private cakeToken;
-    IBEP20 private rewardToken;
+    IBEP20 internal cakeToken;
+    IBEP20 internal rewardToken;
 
-    CAKEPoolInterface cakePool;
+    CAKEPoolInterface internal cakePool;
 
-    /// @notice Összeköti a Straregy-t a Vaultal és a Strategist-el és megad egy kezdő pool-t
-    /// @param _vaultAddress A Vault contract address-e
-    /// @param _strategistAddress A Strategist contract address-e
-    /// @param _poolSymbol A kezdő pool-t beazonosító szimbólum
-    /// @param _poolAddress A kezdő pool címe
-    /// @param _rewardTokenSymbol A jutalomként kapott tokent beazonosító szimbólum
-    /// @param _rewardTokenAddress A jutalomként kapott token address-e
+    /// @notice Links the Strategy, the Vault and the Strategist together and initialises a starting pool
+    /// @param _vaultAddress Address of the Vault contract
+    /// @param _strategistAddress Address of the Strategist wallet
+    /// @param _poolSymbol Identifier symbol of the starting pool
+    /// @param _poolAddress Address of the starting pool
+    /// @param _rewardTokenSymbol Identifier symbol of the starting reward token
+    /// @param _rewardTokenAddress Address of the starting reward token
     constructor (
         address _vaultAddress, 
         address _strategistAddress, 
@@ -50,7 +52,7 @@ contract Strategy is Ownable{
         string memory _rewardTokenSymbol,
         address _rewardTokenAddress
         ) {
-        cakeToken = IBEP20(0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82);
+        cakeToken = IBEP20(cakeTokenAddress);
         rewardToken = IBEP20(_rewardTokenAddress);
         vaultAddress = _vaultAddress;
         strategistAddress = _strategistAddress;
@@ -60,16 +62,16 @@ contract Strategy is Ownable{
         activePoolAddress = _poolAddress;
         activeRewardTokenAddress = _rewardTokenAddress;
         cakeToken.approve(activePoolAddress, uint256(-1));
-        cakePool = CAKEPoolInterface(0x73feaa1eE314F8c655E354234017bE2193C9E24E);
+        cakePool = CAKEPoolInterface(cakePoolAddress);
     }
 
-    /// @notice A hívó csak a Vault lehet
+    /// @notice Can only be called by the Vault
     modifier onlyVault(){
         require(msg.sender == vaultAddress);
         _;
     }
 
-    /// @notice A hívó csak a Strategist lehet
+    /// @notice Can only be called by the Strategist
     modifier onlyStrategist(){
         require(msg.sender == strategistAddress);
         _;
@@ -82,26 +84,25 @@ contract Strategy is Ownable{
         IBEP20(_wot).approve(msg.sender, _amount);
     }
 
-    /// @notice lekéri a korábban approve-olt CAKE tokeneket, feljegyzi és elküldi az aktív poolnak
-    /// @param _amount Az elküldésre szánt CAKE token mennyisége
+    /// @notice Takes the CAKE tokens approved beforehand, adds the amount to the balance then sends it to the active pool
+    /// @param _amount The amount of CAKE tokens to be transferred
     function deposit (uint256 _amount) external onlyVault {
         cakeToken.transferFrom(msg.sender, address(this), _amount);
-        if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
+        if(activePoolAddress == cakePoolAddress) {
             cakePool.enterStaking(_amount);
         } else {
             PoolInterface(activePoolAddress).deposit(_amount);
         }
-        //PoolInterface(activePoolAddress).deposit(_amount);
         balance += _amount;
     }
 
 
-    /// @notice A Vault számára az aktív pool-ból lekér egy bizonyos összeget és a nyereséget elküldi a Strategist-nek.
-    /// A kezelt összeg változását könyveli.
-    /// @param _amount A lekérni szándékozott CAKE token mennyisége
+    /// @notice Withdraws a certain amount of CAKE tokens and sends them to the Vault and the profit is sent to the Strategist.
+    /// The withdrawn amount is subtracted from the balance
+    /// @param _amount The amount of CAKE tokens to be withdrawn
     function withdraw (uint256 _amount) external onlyVault {
-        require(balance >= _amount, "There isn't enough balance");
-        if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
+        require(balance >= _amount, "There is not enough balance");
+        if(activePoolAddress == cakePoolAddress) {
             uint256 reward = cakePool.pendingCake(0, address(this));
             cakePool.leaveStaking(_amount);
             cakeToken.transfer(vaultAddress, _amount);
@@ -114,10 +115,10 @@ contract Strategy is Ownable{
         balance -= _amount;
     }
 
-    /// @notice A Strategist kérésére az aktív pool-ból kivesz minden tokent, a nyereséget elküldi a Strategist-nek,
-    /// a többit a Vaultnak. A kezelt összeget 0-ra állítja
+    /// @notice Withdraws all of the CAKE tokens and sends them to the Vault and the profit is sent to the Strategist.
+    /// The balance is set to zero
     function withdrawAll () external onlyVault returns (uint256) {
-        if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
+        if(activePoolAddress == cakePoolAddress) {
             uint256 reward = cakePool.pendingCake(0, address(this));
             cakePool.leaveStaking(balance);
             cakeToken.transfer(vaultAddress, balance);
@@ -131,10 +132,11 @@ contract Strategy is Ownable{
         balance = 0;
         return amount;
     }
-
-    /// @notice Nincs harvest függvény de a withdraw elküldi a jutalmat is.
+ 
+    /// @notice There is no built in harvest function but the withdraw transfers the profit
+    /// This is just a withdraw with zero amount.
     function harvest () external onlyStrategist {
-        if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
+        if(activePoolAddress == cakePoolAddress) {
             uint256 reward = cakePool.pendingCake(0, address(this));
             cakePool.leaveStaking(0);
             rewardToken.transfer(strategistAddress, reward);
@@ -144,15 +146,15 @@ contract Strategy is Ownable{
         }
     }
 
-    /// @notice Kivesz mindent az aktív pool-ból, lecseráli az aktív pool-t és reward tokent,
-    /// elküldi a nyereséget a Strategist-nek majd mindent berak az új aktív pool-ba
-    /// @dev Fontos, hogy a pool és a token összetartozzon és már korábban el legyen tárolva
-    /// @param _symbolOfNewPool Az új pool-t beazonosító szimbólum
+    /// @notice Withdraws everything then changes the active pool and reward token.
+    /// Sends the profit to the Strategist and everything else is sent to the new active pool.
+    /// @dev The new active pool and reward token has to belong together and should be declared beforehand.
+    /// @param _symbolOfNewPool Identifier symbol of the new pool
     function reinvest (string memory _symbolOfNewPool) external onlyStrategist {
         require(pools[_symbolOfNewPool] != address(0x0), "This pool does not exist");
         require(rewardTokens[tokenOfPool[_symbolOfNewPool]] != address(0x0), "This pair is not set");
 
-        if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
+        if(activePoolAddress == cakePoolAddress) {
             uint256 reward = cakePool.pendingCake(0, address(this));
             cakePool.leaveStaking(balance);
             rewardToken.transfer(strategistAddress, reward);
@@ -165,18 +167,21 @@ contract Strategy is Ownable{
         activeRewardTokenAddress = rewardTokens[tokenOfPool[_symbolOfNewPool]];
         rewardToken = IBEP20(activeRewardTokenAddress);
 
-        if(activePoolAddress == 0x73feaa1eE314F8c655E354234017bE2193C9E24E) {
+        if(activePoolAddress == cakePoolAddress) {
             cakePool.enterStaking(balance);
         } else {
             PoolInterface(activePoolAddress).deposit(balance);
         }
     }
 
-    /// @notice Új pool-t ad a tároltak listájához. Csak az Owner tudja meghívni
-    /// @dev A token és a pool összetartozó legyen és a zoken már el legyen tárolva
-    /// @param _poolSymbol Az új pool-t beazonosító szimbólum
-    /// @param _poolAddress Az új pool címe
-    /// @param _rewardTokenSymbol A jutalomként kapott tokent beazonosító szimbólum
+    /// @notice Adds a new pool to the list.
+    /// @dev The pool and reward token has to belong together and the reward token should be added beforehand.
+    /// It is important that the Owner and the Strategist are different entities for safety reasons.
+    /// This way neither can exploit the contract.
+    /// Both are needed to add and use a new pool.
+    /// @param _poolSymbol Identifier symbol of the new pool
+    /// @param _poolAddress Address of the new pool
+    /// @param _rewardTokenSymbol Identifier symbol of the reward token
     function addPool(string memory _poolSymbol, address _poolAddress, string memory _rewardTokenSymbol) external onlyOwner {
         require(pools[_poolSymbol] == address(0x0), "This pool is already set");
         require(rewardTokens[_rewardTokenSymbol] != address(0x0), "This token does not exist");
@@ -185,20 +190,18 @@ contract Strategy is Ownable{
         cakeToken.approve(_poolAddress, uint256(-1));
     }
 
-    /// @notice Új reward tokent ad a tároltak listájához. Csak az Owner tudja meghívni
-    /// @param _rewardTokenSymbol Az új jutalomként kapott tokent beazonosító szimbólum
-    /// @param _rewardTokenAddress Az új jutalomként kapott token address-e
+    /// @notice Adds a new reward token to the list.
+    /// @param _rewardTokenSymbol Identifier symbol of the new reward token
+    /// @param _rewardTokenAddress Address of the new reward token
     function addToken(string memory _rewardTokenSymbol, address _rewardTokenAddress) external onlyOwner {
         require(rewardTokens[_rewardTokenSymbol] == address(0x0), "This token is already set");
         rewardTokens[_rewardTokenSymbol] = _rewardTokenAddress;
     }
-
-    /// @notice Egy már korábban megadott pool és reward token aktívra állítása. Csak az Owner tudja meghívni
-    /// @dev A token és a pool összetartozó legyen.
-    /// Fontos, hogy a Strategy contractot NE a Strategist deploy-olja biztonsági okokból.
-    /// Ennek az a célja, hogy se a Strategist se az Owner ne tudjon visszaélni.
-    /// A pool váltáshoz mind a kettő hozzájárulására szükség van.
-    /// @param _poolSymbol Az új pool-t beazonosító szimbólum
+    /// @notice Sets an older pool and token to active.
+    /// @dev there is NO withdraw or invest.
+    /// THIS IS FOR SERIOUS EMERGENCIES ONLY
+    /// The pool and reward token has to belong together
+    /// @param _poolSymbol Identifier symbol of the pool to be set to active
     function rollback(string memory _poolSymbol) external onlyOwner {
         require(pools[_poolSymbol] != address(0x0), "This pool does not exist");
         require(rewardTokens[tokenOfPool[_poolSymbol]] != address(0x0), "This token does not exist");
@@ -207,9 +210,8 @@ contract Strategy is Ownable{
         rewardToken = IBEP20(activeRewardTokenAddress);
     }
 
-    /// @notice Visszaadja A kezelt tokenek mennyiségét
-    /// @return A CAKE tokenek amiért ez a Strategy felel
-    function getBalance() public view returns (uint256) {
+    /// @return The amount of CAKE tokens handled by the Strategy
+    function getBalance() external view returns (uint256) {
         return balance;
     }
 }
