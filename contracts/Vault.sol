@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.0;
+pragma solidity 0.7.4;
 
 import "./token/BEP20Mintable.sol";
 
@@ -13,10 +13,11 @@ interface IStrategy {
 /// @title A vault that holds PancakeSwap Cake tokens
 contract Vault is Ownable {
 
-    IBEP20 private cakeToken;
-    BEP20Mintable private yCakeToken;
-    address private strategyAddress;
-    address private strategist;
+    IBEP20 internal cakeToken;
+    BEP20Mintable internal yCakeToken;
+    address internal strategyAddress;
+    address internal strategist;
+    address internal constant cakeTokenAddress = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
 
     event Deposit(address account, uint256 amount);
     event Withdraw(address account, uint256 amount);
@@ -31,7 +32,7 @@ contract Vault is Ownable {
 
     constructor(address _strategistAddress) {
         strategist = _strategistAddress;
-        cakeToken = IBEP20(0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82);
+        cakeToken = IBEP20(cakeTokenAddress);
         yCakeToken = new BEP20Mintable("yCake Token", "yCake");
     }
 
