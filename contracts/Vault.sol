@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.4;
+pragma solidity 0.7.6;
 
 import "./token/BEP20Mintable.sol";
 
@@ -19,12 +19,20 @@ contract Vault is Ownable {
     address internal strategist;
     address internal constant cakeTokenAddress = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
 
+    // For timelock
+    struct locked {
+        uint256 expires;
+        uint256 amount;
+    }
+    mapping(address => locked[]) internal timelocks;
+    uint256 public lockInterval = 60;
+
     event Deposit(address account, uint256 amount);
     event Withdraw(address account, uint256 amount);
     event ChangedCakeAddress(address newAddress);
     event ChangedStrategy(address newAddress);
 
-    /// @notice Only the strategist has permissions to reinvest, harvest or set the strategy
+    /// @notice Only the strategist has permissions to approve or set strategy
     modifier onlyStrategist() {
         require(msg.sender == strategist, "!strategist");
         _;
@@ -51,6 +59,10 @@ contract Vault is Ownable {
         cakeToken.transferFrom(msg.sender, address(this), _amount);
         yCakeToken.mint(msg.sender, _amount);
         IStrategy(strategyAddress).deposit(_amount);
+        locked memory timelockData;
+        timelockData.expires = block.timestamp + lockInterval * 1 minutes;
+        timelockData.amount = _amount;
+        timelocks[msg.sender].push(timelockData);
         emit Deposit(msg.sender, _amount);
     }
 
@@ -59,7 +71,7 @@ contract Vault is Ownable {
     function withdraw(uint256 _amount) public {
         require(_amount > 0, "Only a positive value can be withdrawn");
         require(yCakeToken.allowance(msg.sender, address(this)) >= _amount, "yCake allowance not sufficient");
-        require(yCakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough funds");
+        require(yCakeToken.balanceOf(msg.sender) - getLockedAmount(msg.sender) >= _amount, "Not enough unlocked tokens");
         IStrategy(strategyAddress).withdraw(_amount);
         yCakeToken.burn(msg.sender, _amount);
         cakeToken.transfer(msg.sender, _amount);
@@ -74,7 +86,7 @@ contract Vault is Ownable {
         emit ChangedStrategy(_newAddress);
     }
 
-    /// @notice Changes the address of the active Strategy
+    /// @notice Sets the initial Strategy address
     function setStrategy(address _newAddress) external onlyStrategist {
         require(strategyAddress == address(0x0), "Strategy is already set");
         require(_newAddress != address(0x0), "Invalid address");
@@ -86,6 +98,29 @@ contract Vault is Ownable {
     function setCakeAddress(address _newAddress) external onlyOwner {
         cakeToken = IBEP20(_newAddress);
         emit ChangedCakeAddress(_newAddress);
+    }
+
+    /// @notice Sets the timelock interval for new deposits
+    function setLockInterval(uint256 _minutes) public onlyOwner {
+        lockInterval = _minutes;
+    }
+
+    /// @notice Checks if the address has enough unlocked deposits 
+    /// @dev Also deletes any expired lock data
+    function getLockedAmount(address _investor) internal returns (uint256) {
+        uint256 lockedAmount = 0;
+        locked[] storage usersLocked = timelocks[_investor];    // storage ref -> we can modify members directly in the original array
+        for(uint256 i = 0; i < usersLocked.length; i++) {
+            if (usersLocked[i].expires <= block.timestamp) {
+                // Expired locks, remove them
+                usersLocked[i] = usersLocked[usersLocked.length - 1];
+                usersLocked.pop();
+            } else {
+                // Still not expired, count it in
+                lockedAmount += usersLocked[i].amount;
+            }
+        }
+        return lockedAmount;
     }
 
     /// @notice Gets the yCake balance of _account
