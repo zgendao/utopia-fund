@@ -70,9 +70,16 @@ contract Controller is Ownable{
         IBEP20(stakeTokens[msg.sender]).transfer(msg.sender, _amount);
     }
 
-    function withdrawAll() external onlyVault {
-        uint256 _amount = StrategyInterface(activeStrategies[msg.sender]).withdrawAll();
+    function withdrawAll() external onlyVault returns(uint256, uint256) {
+        uint256 _amount;
+        uint256 _fee;
+        uint256 _growthRate;
+        (_amount, _fee, _growthRate) = StrategyInterface(activeStrategies[msg.sender]).withdrawAll();
+        if(_fee > 0){
+            IBEP20(stakeTokens[msg.sender]).transfer(strategist, _fee);
+        }
         IBEP20(stakeTokens[msg.sender]).transfer(msg.sender, _amount);
+        return (_amount, _growthRate);
     }
 
     /// @notice In case some tokens stuck in the contract
@@ -81,22 +88,35 @@ contract Controller is Ownable{
     }
 
     /// @notice Calls the harvest function of the active strategy, changes the reward tokens to stake tokens and reinvests
-    function harvest() external onlyVault {
-        StrategyInterface(activeStrategies[msg.sender]).harvest();
+    function harvest() external onlyVault returns(uint256) {
+        uint256 _growthRate;
+        uint256 _fee;
+        (_fee, _growthRate) = StrategyInterface(activeStrategies[msg.sender]).harvest();
+        if(_fee > 0){
+            IBEP20(stakeTokens[msg.sender]).transfer(strategist, _fee);
+        }
+        return _growthRate;
     } 
 
     /// @notice Withdraws everything from the active Strategy and changes the active Strategy
     /// @param _newStrategy Address of the new active Strategy
-    function changeStrategy(address _newStrategy) external onlyVault {
+    function changeStrategy(address _newStrategy) external onlyVault returns(uint256) {
         require(rewardTokens[_newStrategy] != address(0x0), "Reward token not set");
         require(strategies[msg.sender][_newStrategy] == true, "Strategy not set");
+        uint256 _amount;
+        uint256 _fee;
+        uint256 _growthRate = 0;
 
         if(activeStrategies[msg.sender] == address(0x0)){
             activeStrategies[msg.sender] = _newStrategy;
         } else {
-            uint256 _amount = StrategyInterface(activeStrategies[msg.sender]).withdrawAll();
+            (_amount, _fee, _growthRate) = StrategyInterface(activeStrategies[msg.sender]).withdrawAll();
+            if(_fee > 0){
+                IBEP20(stakeTokens[msg.sender]).transfer(strategist, _fee);
+            }
             activeStrategies[msg.sender] = _newStrategy;
             StrategyInterface(activeStrategies[msg.sender]).deposit(_amount);
         }
+        return _growthRate;
     }
 }

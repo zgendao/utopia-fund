@@ -14,6 +14,8 @@ contract PancakeCakeStrategy{
     address internal controllerAddress;
 
     uint256 public balance = 0;
+    uint256 internal withdrawn = 0;
+    uint256 internal deposited = 0;
 
     IBEP20 internal cakeToken;
 
@@ -50,6 +52,7 @@ contract PancakeCakeStrategy{
         cakeToken.transferFrom(msg.sender, address(this), _amount);
         pool.enterStaking(_amount);
         balance = balance.add(_amount);
+        deposited = deposited.add(_amount);
     }
 
     /// @notice Withdraws a certain amount of CAKE tokens and sends them to the Controller and the reward is stored for now.
@@ -60,31 +63,73 @@ contract PancakeCakeStrategy{
         pool.leaveStaking(_amount);
         cakeToken.transfer(controllerAddress, _amount);
         balance = balance.sub(_amount);
+        withdrawn = withdrawn.add(_amount);
     }
 
     /// @notice Withdraws all of the staking tokens.
     /// The reward and the stake is sent to the Controller
     /// balance is set to zero
-    function withdrawAll() external onlyController returns (uint256) {
-        uint256 _amount = balance;
-        pool.leaveStaking(_amount);
-        _amount = cakeToken.balanceOf(address(this));
-        cakeToken.transfer(controllerAddress, _amount);
+    function withdrawAll() external onlyController returns (uint256, uint256, uint256) {
+        pool.leaveStaking(balance);
+        uint256 _fullAmount = cakeToken.balanceOf(address(this));
+        uint256 _amount = _fullAmount;
+        uint256 _reward = _fullAmount.sub(balance);
+        uint256 _fee = 0;
+
+        if(_reward >= 10000){
+            _fee = calculateFee(_reward);
+            _amount = _amount.sub(_fee);
+        }
+
+        uint256 _growthRate = calculateGrowthRate(balance, _amount);
+
+        cakeToken.transfer(controllerAddress, _fullAmount);
         balance = 0;
-        return _amount;
+        withdrawn = 0;
+        deposited = 0;
+        return (_amount, _fee, _growthRate);
     }
     
     /// @notice There is no built in harvest function but the withdraw transfers the profit.
     /// The profit is reinvested in the pool
-    function harvest() external onlyController {
+    function harvest() external onlyController returns (uint256, uint256) {
+        uint256 _oldBalance = balance;
         pool.leaveStaking(0);
-        uint256 _amount = cakeToken.balanceOf(address(this));
-        pool.enterStaking(_amount);
-        balance = balance.add(_amount);
+        uint256 _reward = cakeToken.balanceOf(address(this));
+        uint256 _fee = 0;
+
+        if(_reward >= 10000){
+            _fee = calculateFee(_reward);
+            _reward = _reward.sub(_fee);
+            cakeToken.transfer(controllerAddress, _fee);
+        }
+
+        pool.enterStaking(_reward);
+        balance = balance.add(_reward);
+        uint256 _growthRate = calculateGrowthRate(_oldBalance, balance);
+        withdrawn = 0;
+        deposited = 0;
+        return (_fee, _growthRate);
     }
 
     /// @return The amount of CAKE tokens handled by the Strategy
     function getBalance() external view returns (uint256) {
         return balance;
+    }
+
+    /// @notice If the reward is less than 10000 the rounding error becomes considerable
+    /// @return One percent of the submited amount.
+    function calculateFee (uint256 _reward) internal pure returns(uint256){
+        _reward = _reward.mul(100).div(10000);
+        return _reward;
+    }
+
+    /// @notice This is used to calculate the profit of each user
+    /// @return The growth rate of the deposited founds.
+    function calculateGrowthRate (uint256 _balance, uint256 _balanceWithProfit) internal view returns(uint256){
+        _balance = _balance.add(withdrawn).sub(deposited);
+        _balanceWithProfit = _balanceWithProfit.add(withdrawn).sub(deposited);
+        uint256 growthRate = _balanceWithProfit.mul(10000).div(_balance);
+        return growthRate;
     }
 }
