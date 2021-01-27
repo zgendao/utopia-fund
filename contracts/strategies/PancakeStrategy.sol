@@ -15,6 +15,8 @@ contract PancakeStrategy is Ownable{
     address internal controllerAddress;
 
     uint256 public balance = 0;
+    uint256 internal withdrawn = 0;
+    uint256 internal deposited = 0;
 
     IBEP20 internal stakeToken;
     IBEP20 internal rewardToken;
@@ -74,6 +76,7 @@ contract PancakeStrategy is Ownable{
         stakeToken.transferFrom(msg.sender, address(this), _amount);
         pool.deposit(_amount);
         balance = balance.add(_amount);
+        deposited = deposited.add(_amount);
     }
 
     /// @notice Withdraws a certain amount of staking tokens and sends them to the Controller and the reward is stored for now.
@@ -85,35 +88,78 @@ contract PancakeStrategy is Ownable{
         pool.withdraw(_amount);
         stakeToken.transfer(controllerAddress, _amount);
         balance = balance.sub(_amount);
+        withdrawn = withdrawn.add(_amount);
     }
     
     /// @notice Withdraws all of the staking tokens.
     /// The reward is swapped to staking token and all of the staking token is sent to the Controller
     /// balance is set to zero
-    function withdrawAll() external onlyController returns (uint256) {
-        uint256 _amount = balance;
-        pool.withdraw(_amount);
+    function withdrawAll() external onlyController returns (uint256, uint256, uint256) {
+        pool.withdraw(balance);
         uint256 _reward = rewardToken.balanceOf(address(this));
         exchange.swapExactTokensForTokens(_reward, uint256(0), exchangePath, address(this), block.timestamp.add(1800));
-        _amount = stakeToken.balanceOf(address(this));
-        stakeToken.transfer(controllerAddress, _amount);
+        uint256 _fullAmount = stakeToken.balanceOf(address(this));
+        uint256 _amount = _fullAmount;
+        _reward = _fullAmount.sub(balance);
+        uint256 _fee = 0;
+
+        if(_reward >= 10000){
+            _fee = calculateFee(_reward);
+            _amount = _amount.sub(_fee);
+        }
+
+        uint256 _growthRate = calculateGrowthRate(balance, _amount);
+
+        stakeToken.transfer(controllerAddress, _fullAmount);
         balance = 0;
-        return _amount;
+        withdrawn = 0;
+        deposited = 0;
+        return (_amount, _fee, _growthRate);
     }
 
     /// @notice There is no built in harvest function but the withdraw transfers the profit.
     /// The profit is reinvested in the pool
-    function harvest() external onlyController {
+    function harvest() external onlyController returns (uint256, uint256) {
+        uint256 _oldBalance = balance;
         pool.withdraw(0);
         uint256 _reward = rewardToken.balanceOf(address(this));
         exchange.swapExactTokensForTokens(_reward, uint256(0), exchangePath, address(this), block.timestamp.add(1800));
         _reward = stakeToken.balanceOf(address(this));
+        uint256 _fee = 0;
+
+        if(_reward >= 10000){
+            _fee = calculateFee(_reward);
+            _reward = _reward.sub(_fee);
+            stakeToken.transfer(controllerAddress, _fee);
+        }
+
         pool.deposit(_reward);
         balance = balance.add(_reward);
+
+        uint256 _growthRate = calculateGrowthRate(_oldBalance, balance);
+        withdrawn = 0;
+        deposited = 0;
+        return (_fee, _growthRate);
     }
 
     /// @return The amount of staking tokens handled by the Strategy
     function getBalance() external view returns (uint256) {
         return balance;
+    }
+
+    /// @notice If the reward is less than 10000 the rounding error becomes considerable
+    /// @return One percent of the submited amount.
+    function calculateFee (uint256 _reward) internal pure returns(uint256){
+        _reward = _reward.mul(100).div(10000);
+        return _reward;
+    }
+
+    /// @notice This is used to calculate the profit of each user
+    /// @return The growth rate of the deposited founds.
+    function calculateGrowthRate (uint256 _balance, uint256 _balanceWithProfit) internal view returns(uint256){
+        _balance = _balance.add(withdrawn).sub(deposited);
+        _balanceWithProfit = _balanceWithProfit.add(withdrawn).sub(deposited);
+        uint256 growthRate = _balanceWithProfit.mul(10000).div(_balance);
+        return growthRate;
     }
 }
