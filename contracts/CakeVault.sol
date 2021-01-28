@@ -155,6 +155,12 @@ contract CakeVault is Ownable {
     function getBalanceOf(address _account) public view returns (uint256) {
         return yCakeToken.balanceOf(_account);
     }
+    
+    /// @notice Gets the user balance
+    /// @return The amount of Cakes invested
+    function getBalance() public view returns (uint256) {
+        return userBalance[msg.sender];
+    }
 
     /// @notice used to monitor the the rate of the profit gain
     function updateGrowthMonitor(uint256 _growthRate) internal {
