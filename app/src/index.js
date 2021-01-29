@@ -4,13 +4,13 @@ const readline = require("readline")
 const keystore = require('./keystore.json')
 const crypto_helper = require('./crypto_helper')
 const getAPY = require('./APY')
-const strat = require('./stratAbi')
+const vault = require('./vaultAbi')
 //This needs to be set when we deploy the vault
 const vaultAddress = "0x0"
 
 let addr = crypto_helper.addr
 let strategies = crypto_helper.strategies
-let stratAbi = strat.abi
+let vaultAbi = vault.abi
 
 let currentPool
 let currentAPY = 0
@@ -58,7 +58,7 @@ rl.on("close", function() {
 			},
 		]
 	
-		const vault = new web3.eth.Contract(stratAbi, vaultAddress)
+		const vault = new web3.eth.Contract(vaultAbi, vaultAddress)
 	
 		try {
 			function updateAPY() {
