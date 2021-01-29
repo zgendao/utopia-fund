@@ -5,9 +5,11 @@ const keystore = require('./keystore.json')
 const crypto_helper = require('./crypto_helper')
 const getAPY = require('./APY')
 const strat = require('./stratAbi')
+//This needs to be set when we deploy the vault
+const vaultAddress = "0x0"
 
 let addr = crypto_helper.addr
-let symbols = crypto_helper.symbols
+let strategies = crypto_helper.strategies
 let stratAbi = strat.abi
 
 let currentPool
@@ -56,7 +58,7 @@ rl.on("close", function() {
 			},
 		]
 	
-		const strategist = new web3.eth.Contract(stratAbi, "0x227376fdd8c93EC9d48E1e2E134e9dE005d047c0")
+		const vault = new web3.eth.Contract(stratAbi, vaultAddress)
 	
 		try {
 			function updateAPY() {
@@ -94,14 +96,29 @@ rl.on("close", function() {
 						currentAPY = bestAPY
 						currentPool = bestPool
 	
-						await strategist.methods.reinvest(symbols[currentPool]).send( {from : web3.eth.defaultAccount, gas: 500000} )
+						await vault.methods.changeStrategy(strategies[currentPool]).send( {from : web3.eth.defaultAccount, gas: 500000} )
 					}
 	
 					let today = new Date()
 					console.log(`Current time is ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`)
 				})
 			}
-	
+			//calling the harvest function every 24 hours
+			async function harvesting() {
+				vault.methods.harvest().send( {from : web3.eth.defaultAccount, gas: 500000}).then(
+					async function() {
+						console.log("successful harvest");
+						setTimeout(async () => await harvesting(), 1000 * 60 * 60 * 24)	
+					}
+				).catch(
+					async function() {
+						console.log("failed harvest");
+						await harvesting()
+					}
+				)
+			}
+			harvesting();
+
 			updateAPY()
 	
 			// calling the updateAPY function every hour
