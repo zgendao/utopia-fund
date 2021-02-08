@@ -86,12 +86,16 @@ contract CakeVault is Ownable {
     /// @dev Burning yCake should be possible, since the contract should have the MINTER_ROLE
     function withdraw(uint256 _amount) public {
         require(_amount > 0, "Only a positive value can be withdrawn");
+        require(userBalance[msg.sender] >= _amount, "Not enough balance");
         require(yCakeToken.allowance(msg.sender, address(this)) >= _amount, "yCake allowance not sufficient");
         require(yCakeToken.balanceOf(msg.sender) - getLockedAmount(msg.sender) >= _amount, "Not enough unlocked tokens");
 
         uint256 _reward = calculateReward();
         uint256 profit = _amount.add(_reward).add(pendingReward[msg.sender]);
         pendingReward[msg.sender] = 0;
+        vaultBalance = vaultBalance.sub(_amount);
+        userBalance[msg.sender] = userBalance[msg.sender].sub(_amount);
+        lastDeposit[msg.sender] = block.number;
 
         controller.withdraw(profit);
         yCakeToken.burn(msg.sender, _amount);
@@ -154,6 +158,12 @@ contract CakeVault is Ownable {
     /// @return The amount of yCakes _account has
     function getBalanceOf(address _account) public view returns (uint256) {
         return yCakeToken.balanceOf(_account);
+    }
+    
+    /// @notice Gets the user balance
+    /// @return The amount of Cakes invested
+    function getBalance() public view returns (uint256) {
+        return userBalance[msg.sender];
     }
 
     /// @notice used to monitor the the rate of the profit gain
