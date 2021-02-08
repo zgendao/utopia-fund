@@ -1,24 +1,64 @@
 exports.addr = {
 	"cake_pool" : "0x73feaa1eE314F8c655E354234017bE2193C9E24E",
 	"twt_pool" : "0x9c4EBADa591FFeC4124A7785CAbCfb7068fED2fb",
+	"ditto_pool" : "0x624ef5C2C6080Af188AF96ee5B3160Bb28bb3E02",
+	"egld_pool" : "0x2dcf4cDFf4Dd954683Fe0a6123077f8a025b66cF",
+	"ust_pool" : "0x6EFa207ACdE6e1caB77c1322CbdE9628929ba88F",
+	"front_pool" : "0xf7a31366732F08E8e6B88519dC3E827e04616Fc9",
+	"helmet_pool" : "0x9F23658D5f4CEd69282395089B0f8E4dB85C6e79",
+	"btcst_pool" : "0xB6fd2724cc9c90DD31DA35DbDf0300009dceF97d",
+	"bscx_pool" : "0x108BFE84Ca8BCe0741998cb0F60d313823cEC143",
+	"ten_pool" : "0x4A26b082B432B060B1b00A84eE4E823F04a6f69a",
 
 	"cake_token" : "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
 	"twt_token" : "0x4b0f1812e5df2a09796481ff14017e6005508003",
+	"ditto_token" : "0x233d91a0713155003fc4dce0afa871b508b3b715",
+	"egld_token" : "0xbf7c81fff98bbe61b40ed186e4afd6ddd01337fe",
+	"ust_token" : "0x23396cf899ca06c4472205fc903bdb4de249d6fc",
+	"front_token" : "0x928e55dab735aa8260af3cedada18b5f70c72f1b",
+	"helmet_token" : "0x948d2a81086a075b3130bac19e4c6dee1d2e3fe8",
+	"btcst_token" : "0x78650b139471520656b9e7aa7a5e9276814a38e9",
+	"bscx_token" : "0x5ac52ee5b2a633895292ff6d8a89bb9190451587",
+	"ten_token" : "0xdff8cb622790b7f92686c722b02cab55592f152c",
 }
 
 exports.coingecko_ids = {
 	"0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82" : "pancakeswap-token",
 	"0x4b0f1812e5df2a09796481ff14017e6005508003" : "trust-wallet-token",
+	"0x233d91a0713155003fc4dce0afa871b508b3b715" : "ditto",
+	"0xbf7c81fff98bbe61b40ed186e4afd6ddd01337fe" : "elrond-erd-2",
+	"0x23396cf899ca06c4472205fc903bdb4de249d6fc" : "terrausd",
+	"0x928e55dab735aa8260af3cedada18b5f70c72f1b" : "frontier-token",
+	"0x948d2a81086a075b3130bac19e4c6dee1d2e3fe8" : "helmet-insure",
+	"0x78650b139471520656b9e7aa7a5e9276814a38e9" : "btc-standard-hashrate-token",
+	"0x5ac52ee5b2a633895292ff6d8a89bb9190451587" : "bscex",
+	"0xdff8cb622790b7f92686c722b02cab55592f152c" : "tenet",
 }
 
 exports.tokenOfPool = {
 	"0x73feaa1eE314F8c655E354234017bE2193C9E24E" : "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82", // CAKE
 	"0x9c4EBADa591FFeC4124A7785CAbCfb7068fED2fb" : "0x4b0f1812e5df2a09796481ff14017e6005508003", // TWT
+	"0x624ef5C2C6080Af188AF96ee5B3160Bb28bb3E02" : "0x233d91a0713155003fc4dce0afa871b508b3b715", // DITTO
+	"0x2dcf4cDFf4Dd954683Fe0a6123077f8a025b66cF" : "0xbf7c81fff98bbe61b40ed186e4afd6ddd01337fe", // EGLD
+	"0x23396cf899ca06c4472205fc903bdb4de249d6fc" : "0x23396cf899ca06c4472205fc903bdb4de249d6fc", // UST
+	"0xf7a31366732F08E8e6B88519dC3E827e04616Fc9" : "0x928e55dab735aa8260af3cedada18b5f70c72f1b", // FRONT
+	"0x9F23658D5f4CEd69282395089B0f8E4dB85C6e79" : "0x948d2a81086a075b3130bac19e4c6dee1d2e3fe8", // HELMET
+	"0xB6fd2724cc9c90DD31DA35DbDf0300009dceF97d" : "0x78650b139471520656b9e7aa7a5e9276814a38e9", // BTCST
+	"0x108BFE84Ca8BCe0741998cb0F60d313823cEC143" : "0x5ac52ee5b2a633895292ff6d8a89bb9190451587", // BSCX
+	"0x4A26b082B432B060B1b00A84eE4E823F04a6f69a" : "0xdff8cb622790b7f92686c722b02cab55592f152c", // TEN
 }
 
 // Pool Address -> Strategy Address
 // This needs to be updated after we deploy strategies
 exports.strategies = {
-	"0x73feaa1eE314F8c655E354234017bE2193C9E24E" : "0x0",
-	"0x9c4EBADa591FFeC4124A7785CAbCfb7068fED2fb" : "0x0",
+	"0x73feaa1eE314F8c655E354234017bE2193C9E24E" : "0x0", // CAKE
+	"0x9c4EBADa591FFeC4124A7785CAbCfb7068fED2fb" : "0x0", // TWT
+	"0x624ef5C2C6080Af188AF96ee5B3160Bb28bb3E02" : "0x0", // DITTO
+	"0x2dcf4cDFf4Dd954683Fe0a6123077f8a025b66cF" : "0x0", // EGLD
+	"0x23396cf899ca06c4472205fc903bdb4de249d6fc" : "0x0", // UST
+	"0xf7a31366732F08E8e6B88519dC3E827e04616Fc9" : "0x0", // FRONT
+	"0x9F23658D5f4CEd69282395089B0f8E4dB85C6e79" : "0x0", // HELMET
+	"0xB6fd2724cc9c90DD31DA35DbDf0300009dceF97d" : "0x0", // BTCST
+	"0x108BFE84Ca8BCe0741998cb0F60d313823cEC143" : "0x0", // BSCX
+	"0x4A26b082B432B060B1b00A84eE4E823F04a6f69a" : "0x0", // TEN
 }

@@ -1,5 +1,5 @@
 
-    var contract;
+    let contract;
     //this needs to be updated after deployement of Vault
     const cakeVaultAddress = "0x0";
     const cakeAddress = "0x0";
@@ -9,47 +9,56 @@
     //contract functions
     async function cakeApprove() {
       contract = new web3.eth.Contract(BEP20Abi, cakeAddress);
-      let userAccount = await web3.eth.getAccounts();
-      await contract.methods.approve(cakeVaultAddress, maxValue).send( {from : userAccount[0], gas: 500000} )
+      let accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
+      await contract.methods.approve(cakeVaultAddress, maxValue).send( {from : accounts[0], gas: 500000} )
     }
 
     async function yCakeApprove() {
       contract = new web3.eth.Contract(BEP20Abi, yCakeAddress);
-      let userAccount = await web3.eth.getAccounts();
-      await contract.methods.approve(cakeVaultAddress, maxValue).send( {from : userAccount[0], gas: 500000} )
+      let accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
+      await contract.methods.approve(cakeVaultAddress, maxValue).send( {from : accounts[0], gas: 500000} )
     }
     
     async function stake() {
       contract = new web3.eth.Contract(cakeVaultAbi, cakeVaultAddress);
-      let userAccount = await web3.eth.getAccounts();
+      let accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
       let stakeAmount = document.getElementById("stakeAmount").value;
-      await contract.methods.deposit(stakeAmount).send( {from : userAccount[0], gas: 500000} )
+      await contract.methods.deposit(stakeAmount).send( {from : accounts[0], gas: 500000} )
     }
 
     async function withdraw() {
+      let accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
       contract = new web3.eth.Contract(cakeVaultAbi, cakeVaultAddress);
-      let userAccount = await web3.eth.getAccounts();
       let withdrawAmount = document.getElementById("withdrawAmount").value;
-      await contract.methods.withdraw(withdrawAmount).send( {from : userAccount[0], gas: 500000} )
+      await contract.methods.withdraw(withdrawAmount).send( {from : accounts[0], gas: 500000} )
+    }
+
+    async function userHarvest() {
+      let accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
+      contract = new web3.eth.Contract(cakeVaultAbi, cakeVaultAddress);
+      await contract.methods.userHarvest().send( {from : accounts[0], gas: 500000} )
     }
 
     async function getBalance() {
       contract = new web3.eth.Contract(cakeVaultAbi, cakeVaultAddress);
-      let balance = await contract.methods.getBalance().call();
+      let accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
+      let balance = await contract.methods.userBalance(accounts[0]).call();
 	    return balance;
     }
 
-    async function getBalanceOf() {
+    async function getReward() {
+      let accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
       contract = new web3.eth.Contract(cakeVaultAbi, cakeVaultAddress);
-      let userAccount = await web3.eth.getAccounts();
-      let yCake = await contract.methods.getBalanceOf(userAccount[0]).call();
-	    return yCake;
+      let reward = await contract.methods.getPendingReward(accounts[0]).call();
+	    return reward;
     }
 
-    async function getReward() {
+    async function getBalanceOf() {
+      let accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
       contract = new web3.eth.Contract(cakeVaultAbi, cakeVaultAddress);
-      let reward = await contract.methods.calculateReward().call();
-	    return reward;
+      let yCake = await contract.methods.getBalanceOf(accounts[0]).call();
+      console.log("getBalanceOf");
+	    return yCake;
     }
 
 window.addEventListener('load', async () => {
@@ -57,12 +66,11 @@ window.addEventListener('load', async () => {
     if (window.ethereum) {
       window.web3 = new Web3(ethereum);
       try {
-        // Request account access if needed
-        await ethereum.enable();
 
         //listeners
         document.getElementById('stakeButton').addEventListener('click', async () => stake());
         document.getElementById('withdrawButton').addEventListener('click', async () => withdraw());
+        document.getElementById('harvestButton').addEventListener('click', async () => userHarvest());
         document.getElementById('approve_Cake').addEventListener('click', async () => cakeApprove());
         document.getElementById('approve_yCake').addEventListener('click', async () => yCakeApprove());
 

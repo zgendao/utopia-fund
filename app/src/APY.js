@@ -83,6 +83,10 @@ async function getAPY(web3, poolAddress, rewardToken, callback) {
 	else
 		rewardPerBlock = await poolContract.methods.rewardPerBlock().call()
 
+	if(bonusEndBlock <= currentBlock){
+		callback(-1)
+	}
+	
 	blockDiff = bonusEndBlock - currentBlock
 
 	// getting the ABI for the reward token contract
@@ -113,6 +117,9 @@ async function getAPY(web3, poolAddress, rewardToken, callback) {
 	console.log(`rewardTokenPrice (${coingecko_ids[rewardToken]}): $${rewardTokenPrice}`)
 
 	// we are ready to calculate the APY and send it back to the callback function
+	/*if(bonusEndBlock <= currentBlock){
+		return 0 //APY = 0
+	}*/
 	callback(
 		(rewardPerBlock * rewardTokenPrice * (10 ** 18 / 10 ** decimals))
 		/
