@@ -1,10 +1,9 @@
-
     let contract;
     //this needs to be updated after deployement of Vault
     const cakeVaultAddress = "0x0";
     const cakeAddress = "0x0";
     const yCakeAddress = "0x0";
-    const maxValue = BigInt(115792089237316195423570985008687907853269984665640564039457584007913129639935);
+    const maxValue = 115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 
     //contract functions
     async function cakeApprove() {
@@ -57,7 +56,6 @@
       let accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
       contract = new web3.eth.Contract(cakeVaultAbi, cakeVaultAddress);
       let yCake = await contract.methods.getBalanceOf(accounts[0]).call();
-      console.log("getBalanceOf");
 	    return yCake;
     }
 
