@@ -172,8 +172,9 @@ contract CakeVault is Ownable {
     /// @param _cakeAmount The amount of Cake to be converted
     /// @return _cakeAmount in share
     function cakeToShare(uint256 _cakeAmount) internal view returns (uint256){
-        if(controller.getBalance().add(cakeToken.balanceOf(address(this))) > 0){
-            return _cakeAmount.mul(fullShare).div(controller.getBalance().add(cakeToken.balanceOf(address(this))));
+        uint256 _fullCakeAmount = controller.getBalance().add(cakeToken.balanceOf(address(this)));
+        if(_fullCakeAmount > 0){
+            return _cakeAmount.mul(fullShare).div(_fullCakeAmount);
         }else{
             return _cakeAmount.mul(1e21);
         }
