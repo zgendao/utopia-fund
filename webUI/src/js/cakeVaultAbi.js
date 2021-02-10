@@ -148,6 +148,25 @@ var cakeVaultAbi = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "userBalance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "_controllerAddress",
         "type": "address"
       }
@@ -174,7 +193,7 @@ var cakeVaultAbi = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_amount",
+        "name": "_cakeAmount",
         "type": "uint256"
       }
     ],
@@ -213,6 +232,13 @@ var cakeVaultAbi = [
         "type": "uint256"
       }
     ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "depositAll",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -263,20 +289,20 @@ var cakeVaultAbi = [
   },
   {
     "inputs": [],
-    "name": "getBalance",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
+    "name": "userHarvest",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "calculateReward",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_account",
+        "type": "address"
+      }
+    ],
+    "name": "getPendingReward",
     "outputs": [
       {
         "internalType": "uint256",

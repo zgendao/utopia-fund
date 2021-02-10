@@ -11,10 +11,10 @@ contract Controller is Ownable{
 
     address public strategist;
 
-    mapping(address => address) public stakeTokens;
-    mapping(address => mapping(address => bool)) public strategies;
-    mapping(address => address) public activeStrategies;
-    mapping(address => address) public rewardTokens;
+    mapping(address => address) internal stakeTokens;
+    mapping(address => mapping(address => bool)) internal strategies;
+    mapping(address => address) internal activeStrategies;
+    mapping(address => address) internal rewardTokens;
 
     constructor (address _strategistAddress) {
         strategist = _strategistAddress;
@@ -70,16 +70,15 @@ contract Controller is Ownable{
         IBEP20(stakeTokens[msg.sender]).transfer(msg.sender, _amount);
     }
 
-    function withdrawAll() external onlyVault returns(uint256, uint256) {
+    function withdrawAll() external onlyVault returns(uint256) {
         uint256 _amount;
         uint256 _fee;
-        uint256 _growthRate;
-        (_amount, _fee, _growthRate) = StrategyInterface(activeStrategies[msg.sender]).withdrawAll();
+        (_amount, _fee) = StrategyInterface(activeStrategies[msg.sender]).withdrawAll();
         if(_fee > 0){
             IBEP20(stakeTokens[msg.sender]).transfer(strategist, _fee);
         }
         IBEP20(stakeTokens[msg.sender]).transfer(msg.sender, _amount);
-        return (_amount, _growthRate);
+        return _amount;
     }
 
     /// @notice In case some tokens stuck in the contract
@@ -88,35 +87,39 @@ contract Controller is Ownable{
     }
 
     /// @notice Calls the harvest function of the active strategy, changes the reward tokens to stake tokens and reinvests
-    function harvest() external onlyVault returns(uint256) {
-        uint256 _growthRate;
-        uint256 _fee;
-        (_fee, _growthRate) = StrategyInterface(activeStrategies[msg.sender]).harvest();
+    function harvest() external onlyVault {
+        uint256 _fee = StrategyInterface(activeStrategies[msg.sender]).harvest();
         if(_fee > 0){
             IBEP20(stakeTokens[msg.sender]).transfer(strategist, _fee);
         }
-        return _growthRate;
     } 
 
     /// @notice Withdraws everything from the active Strategy and changes the active Strategy
     /// @param _newStrategy Address of the new active Strategy
-    function changeStrategy(address _newStrategy) external onlyVault returns(uint256) {
+    function changeStrategy(address _newStrategy) external onlyVault{
         require(rewardTokens[_newStrategy] != address(0x0), "Reward token not set");
         require(strategies[msg.sender][_newStrategy] == true, "Strategy not set");
         uint256 _amount;
         uint256 _fee;
-        uint256 _growthRate = 0;
 
         if(activeStrategies[msg.sender] == address(0x0)){
             activeStrategies[msg.sender] = _newStrategy;
         } else {
-            (_amount, _fee, _growthRate) = StrategyInterface(activeStrategies[msg.sender]).withdrawAll();
-            if(_fee > 0){
-                IBEP20(stakeTokens[msg.sender]).transfer(strategist, _fee);
+            if(StrategyInterface(activeStrategies[msg.sender]).getBalance() > 0){
+                (_amount, _fee) = StrategyInterface(activeStrategies[msg.sender]).withdrawAll();
+                if(_fee > 0){
+                    IBEP20(stakeTokens[msg.sender]).transfer(strategist, _fee);
+                }
+                activeStrategies[msg.sender] = _newStrategy;
+                StrategyInterface(activeStrategies[msg.sender]).deposit(_amount);
+            }else{
+                activeStrategies[msg.sender] = _newStrategy;
             }
-            activeStrategies[msg.sender] = _newStrategy;
-            StrategyInterface(activeStrategies[msg.sender]).deposit(_amount);
         }
-        return _growthRate;
+    }
+
+    /// @return The amount of Stake tokens handled by the Strategy
+    function getBalance() external view onlyVault returns(uint256) {
+        return StrategyInterface(activeStrategies[msg.sender]).getBalance();
     }
 }

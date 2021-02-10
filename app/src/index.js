@@ -52,8 +52,43 @@ rl.on("close", function() {
 				"APY": 0
 			},
 			{
-				"address": addr['twt_pool'],
-				"reward": addr['twt_token'],
+				"address": addr['ditto_pool'],
+				"reward": addr['ditto_token'],
+				"APY": 0
+			},
+			{
+				"address": addr['egld_pool'],
+				"reward": addr['egld_token'],
+				"APY": 0
+			},
+			{
+				"address": addr['ust_pool'],
+				"reward": addr['ust_token'],
+				"APY": 0
+			},
+			{
+				"address": addr['front_pool'],
+				"reward": addr['front_token'],
+				"APY": 0
+			},
+			{
+				"address": addr['helmet_pool'],
+				"reward": addr['helmet_token'],
+				"APY": 0
+			},
+			{
+				"address": addr['btcst_pool'],
+				"reward": addr['btcst_token'],
+				"APY": 0
+			},
+			{
+				"address": addr['bscx_pool'],
+				"reward": addr['bscx_token'],
+				"APY": 0
+			},
+			{
+				"address": addr['ten_pool'],
+				"reward": addr['ten_token'],
 				"APY": 0
 			},
 		]
