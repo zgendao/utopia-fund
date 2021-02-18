@@ -153,6 +153,7 @@ contract CakeVault is Ownable {
                 // Expired locks, remove them
                 usersLocked[i] = usersLocked[usersLockedLength - 1];
                 usersLocked.pop();
+                usersLockedLength--;
                 i--;
             } else {
                 // Still not expired, count it in
@@ -217,5 +218,5 @@ contract CakeVault is Ownable {
         uint256 _balance = cakeToShare(userBalance[_account]);
         uint256 _profit = userShare[_account].sub(_balance);
         return shareToCake(_profit);
-    }  
+    }
 }
