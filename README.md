@@ -39,6 +39,7 @@ Before deploying on the Mainnet, in the truffle-config.js file, change the "from
 The deployment of contracts is done through the 2_deploy_contracts.js file. You have to specify here wich contracts you would like to deploy and in what order. Also this is where you pass values to the constructors.
 
 Deployment can be done by either of these commands.
+
 Mainnet
 ```sh
 truffle deploy --network bsc
