@@ -47,7 +47,7 @@ contract Controller is Ownable{
     /// @param _vaultAddress Address of the Vault that uses the new Strategy
     /// @param _strategyAddress Address of the new Strategy
     /// @param _rewardTokenAddress Address of the Token we get from the new Strategy as reward
-    function addStrategy(address _vaultAddress, address _strategyAddress, address _rewardTokenAddress) external onlyStrategist {
+    function addStrategy(address _vaultAddress, address _strategyAddress, address _rewardTokenAddress) external onlyOwner {
         require(stakeTokens[_vaultAddress] != address(0x0), "Not Vault");
         strategies[_vaultAddress][_strategyAddress] = true;
         rewardTokens[_strategyAddress] = _rewardTokenAddress;

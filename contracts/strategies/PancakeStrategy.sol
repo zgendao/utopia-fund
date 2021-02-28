@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 contract PancakeStrategy is Ownable{
     using SafeMath for uint256;
 
-    address internal vaultAddress;
     address internal controllerAddress;
 
     uint256 public balance = 0;
@@ -25,15 +24,13 @@ contract PancakeStrategy is Ownable{
     TokenSwap internal exchange;
 
     /// @notice Links the Strategy, the Vault and the Controller together and initialises the pool
-    /// @param _vaultAddress Address of the Vault contract
     /// @param _controllerAddress Address of the Controller contract
     /// @param _stakeTokenAddress Address of the staking token
     /// @param _poolAddress Address of the pool
     /// @param _rewardTokenAddress Address of the reward token
     /// @param _exchangeAddress contranct handling the token swap [0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F]
     /// @param _path path of exchange from reward to stake token
-    constructor (
-        address _vaultAddress, 
+    constructor ( 
         address _controllerAddress,
         address _stakeTokenAddress, 
         address _poolAddress,
@@ -43,7 +40,6 @@ contract PancakeStrategy is Ownable{
         ) {
         stakeToken = IBEP20(_stakeTokenAddress);
         rewardToken = IBEP20(_rewardTokenAddress);
-        vaultAddress = _vaultAddress;
         controllerAddress = _controllerAddress;
         pool = PoolInterface(_poolAddress);
         exchangePath = _path;
@@ -61,6 +57,12 @@ contract PancakeStrategy is Ownable{
     /// @notice In case of an error in the exchange contract
     function setExchange(address _newExchangeAddress) external onlyOwner {
        exchange = TokenSwap(_newExchangeAddress);
+    }
+
+    /// @notice In case of an error in the exchange path
+    /// @param _path path of exchange from reward to stake token
+    function setExchangePath(address[] memory _path) external onlyOwner {
+       exchangePath = _path;
     }
 
     /// @notice In case some tokens stuck in the contract

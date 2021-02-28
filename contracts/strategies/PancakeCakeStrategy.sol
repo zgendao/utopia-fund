@@ -9,8 +9,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract PancakeCakeStrategy {
     using SafeMath for uint256;
-
-    address internal vaultAddress;
+    
     address internal controllerAddress;
 
     uint256 public balance = 0;
@@ -20,18 +19,15 @@ contract PancakeCakeStrategy {
     CakePoolInterface internal pool;
 
     /// @notice Links the Strategy, the Vault and the Controller together and initialises the pool
-    /// @param _vaultAddress Address of the Vault contract
     /// @param _controllerAddress Address of the Controller contract
     /// @param _cakeTokenAddress Address of the CAKE token. This is the staking AND the reward token.
     /// @param _poolAddress Address of the CAKEpool
-    constructor (
-        address _vaultAddress, 
+    constructor ( 
         address _controllerAddress,
         address _cakeTokenAddress, 
         address _poolAddress
         ) {
         cakeToken = IBEP20(_cakeTokenAddress);
-        vaultAddress = _vaultAddress;
         controllerAddress = _controllerAddress;
         pool = CakePoolInterface(_poolAddress);
         cakeToken.approve(_poolAddress, uint256(-1));
