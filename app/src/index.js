@@ -6,7 +6,7 @@ const crypto_helper = require('./crypto_helper')
 const getAPY = require('./APY')
 const vault = require('./vaultAbi')
 //This needs to be set when we deploy the vault
-const vaultAddress = "0x0"
+const vaultAddress = "0x32C658FE435145D3B1Edb91E3f1c850362397eca"
 
 let addr = crypto_helper.addr
 let strategies = crypto_helper.strategies

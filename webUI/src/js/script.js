@@ -1,8 +1,9 @@
+
     let contract;
     //this needs to be updated after deployement of Vault
-    const cakeVaultAddress = "0x0";
-    const cakeAddress = "0x0";
-    const yCakeAddress = "0x0";
+    const cakeVaultAddress = "0x32C658FE435145D3B1Edb91E3f1c850362397eca";
+    const cakeAddress = "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82";
+    const yCakeAddress = "0xe0897C19e6dE7A127A1C3147b214184Ba6D8AD32";
     const maxValue = 115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 
     //contract functions

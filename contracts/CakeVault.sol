@@ -61,6 +61,10 @@ contract CakeVault is Ownable {
         require(cakeToken.allowance(msg.sender, address(this)) >= _amount, "Cake allowance not sufficient");
         require(cakeToken.balanceOf(msg.sender) >= _amount, "Sender does not have enough funds");
 
+        if(fullShare > 0){
+            controller.harvest();
+        }
+
         uint256 _share = cakeToShare(_amount);
         fullShare = fullShare.add(_share);
         userShare[msg.sender] = userShare[msg.sender].add(_share);
@@ -97,7 +101,7 @@ contract CakeVault is Ownable {
             uint256 stratBalance = controller.getBalance();
             uint256 _spill = _amount.sub(cakeToken.balanceOf(address(this)));
             if(stratBalance < _spill){
-                harvest();
+                controller.harvest();
             }
             controller.withdraw(_spill);
         }
