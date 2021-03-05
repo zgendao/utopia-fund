@@ -8,7 +8,7 @@ Before a deposit you have to call the Cake token's approve function. The spender
 The getPendingReward function returns the accumulated profit for the user.
 **This value is only updated after a harvest**
 
-Before a withdraw, similarly to the deposit, you have to call an approve, but this time is for the yCake tokens. Just like before, the spender is the Vault address and the amount should be at least equal to the amount of Cake tokens you would like to withdraw. This doesn't include the received profit.
+Before a withdraw, similarly to the deposit, you have to call an approve, but this time for the yCake tokens. Just like before, the spender is the Vault address and the amount should be at least equal to the amount of Cake tokens you would like to withdraw. This doesn't include the received profit.
 
 The userHarvest function sends out the pending reward and sets it to zero. There's no need for approve or burning yCake tokens.
 
@@ -17,26 +17,26 @@ Things you need:
 - [Node.js](https://nodejs.org/)
 - Truffle
 
-After downloading the source code you have to download the dependecies as well. For this, open a command line in the project folder and run the following command.
+After downloading the source code you have to download the dependencies as well. For this, open a command line in the project folder and run the following command.
 ```sh
 npm install
 ```
-This will download every necessary files in the node_modules folder.
+This will download every necessary file in the node_modules folder.
 
 You need two wallets for testing and deployment, an Owner and a Strategist. The Owner is responsible for the deployment and supervises the application. The Strategist is responsible for the efficient profit gaining. The Strategist and the Owner should be separate entities for safety reasons. 
 
-The core of the project is made up of 3 smart contracts. The Controller, the Vault and the Strategy. There's also a script file wich helps the Staretgist choose the most profitable pool.
-- There sould always be only one instance of the Controller and it links all the Strategies to the Vault
+The core of the project is made up of 3 smart contracts. The Controller, the Vault and the Strategy. There's also a script file which helps the Strategist choose the most profitable pool.
+- There should always be only one instance of the Controller and it links all the Strategies to the Vault
 - There can be more than one Vault but each Vault can only use one type of token as a base.
-- Every Strategy is representing a separate pool so there can be more than one linked to a Vault, but only one of them can be active. The Strategist decides wich Strategy is active.
+- Every Strategy is representing a separate pool so there can be more than one linked to a Vault, but only one of them can be active. The Strategist decides which Strategy is active.
 
 When changing Strategy, every token will be relocated to the new active Strategy. We are planning to make a system where can be more than one active Strategy and the assets are distributed evenly amongst them.
 
-Before deployment you need to create a .secret file in the project folder and copy the 12 word long MetaMask safety key in there and nothing else. Make sure to not share that file anywhere because it can endanger your wallet and your savings.
+Before deployment you need to create a .secret file in the project folder and copy the 12 words long MetaMask safety key in there and nothing else. Make sure to not share that file anywhere because it can endanger your wallet and your savings.
 
 Before deploying on the Mainnet, in the truffle-config.js file, change the "from:" address in the "bsc:{}" to the one you would like to use as Owner. This address will deploy the contracts so make sure you have enough gas.
 
-The deployment of contracts is done through the 2_deploy_contracts.js file. You have to specify here wich contracts you would like to deploy and in what order. Also this is where you pass values to the constructors.
+The deployment of contracts is done through the 2_deploy_contracts.js file. You have to specify here which contracts you would like to deploy and in what order. Also this is where you pass values to the constructors.
 
 Deployment can be done by either of these commands.
 
